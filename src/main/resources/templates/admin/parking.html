@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Parking Area</title>
+    <meta charset="UTF-8">
+    <style>
+        .form-container {
+            margin: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-container input, .form-container select {
+            padding: 8px;
+            margin: 5px;
+            width: 200px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Add Parking Area</h2>
+
+<form th:action="@{/admin/parking/add}" th:object="${parkingArea}" method="post" class="form-container">
+
+    <div th:if="${errorMessage != null}" class="error">
+        <p th:text="${errorMessage}"></p>
+    </div>
+
+    <label for="name">Parking Name:</label>
+    <input type="text" id="name" th:field="*{name}" required><br>
+
+    <label for="location">Location:</label>
+    <input type="text" id="location" th:field="*{location}" required><br>
+
+    <label for="city">City:</label>
+    <input type="text" id="city" th:field="*{city}" required><br>
+
+    <label for="capacity">Capacity:</label>
+    <input type="number" id="capacity" th:field="*{capacity}" required><br>
+
+    <label for="type">Parking Type:</label>
+    <select id="type" th:field="*{type}" required>
+        <option value="Car">Car</option>
+        <option value="Bike">Bike</option>
+        <option value="Both">Both</option>
+    </select><br>
+
+    <div id="carSlotsSection">
+        <label for="carSlots">Car Slots:</label>
+        <input type="number" id="carSlots" th:field="*{carSlots}"><br>
+    </div>
+
+    <div id="bikeSlotsSection">
+        <label for="bikeSlots">Bike Slots:</label>
+        <input type="number" id="bikeSlots" th:field="*{bikeSlots}"><br>
+    </div>
+
+    <label for="ownerName">Owner Name:</label>
+    <input type="text" id="ownerName" th:field="*{ownerName}" required><br>
+	
+
+
+    <button type="submit" class="btn">Add Parking Area</button>
+</form>
+
+<script>
+    // Dynamically show car/bike slots based on selected type
+    const typeSelect = document.getElementById('type');
+    const carSlotsSection = document.getElementById('carSlotsSection');
+    const bikeSlotsSection = document.getElementById('bikeSlotsSection');
+
+    typeSelect.addEventListener('change', function () {
+        const type = typeSelect.value;
+        if (type === 'Both') {
+            carSlotsSection.style.display = 'block';
+            bikeSlotsSection.style.display = 'block';
+        } else if (type === 'Car') {
+            carSlotsSection.style.display = 'block';
+            bikeSlotsSection.style.display = 'none';
+        } else if (type === 'Bike') {
+            carSlotsSection.style.display = 'none';
+            bikeSlotsSection.style.display = 'block';
+        }
+    });
+
+    // Trigger initial type selection
+    typeSelect.dispatchEvent(new Event('change'));
+</script>
+
+</body>
+</html>

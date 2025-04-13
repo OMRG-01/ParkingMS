@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Payment Gateway</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4A6FDC;
+            --primary-dark: #3A5FC8;
+            --secondary: #F8F9FA;
+            --success: #28a745;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .card {
+            background-color: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .card-header h2 {
+            font-size: 24px;
+            margin: 0;
+        }
+        
+        .card-header .secure-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        .payment-methods {
+            margin-bottom: 30px;
+        }
+        
+        .method-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+        
+        .payment-option {
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .payment-option.selected {
+            border-color: var(--primary);
+            background-color: rgba(74, 111, 220, 0.05);
+        }
+        
+        .payment-option label {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .payment-icon {
+            margin-right: 15px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+        
+        .payment-label {
+            flex-grow: 1;
+            font-weight: 500;
+        }
+        
+        .radio-custom {
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .radio-custom input {
+            opacity: 0;
+            position: absolute;
+        }
+        
+        .radio-custom .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .radio-custom input:checked ~ .checkmark {
+            border-color: var(--primary);
+        }
+        
+        .radio-custom .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            top: 3px;
+            left: 3px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+        
+        .radio-custom input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+        
+        .payment-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+        
+        .payment-result.success {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        
+        .payment-result.error {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+        
+        .payment-icons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .payment-icons img {
+            height: 24px;
+            opacity: 0.6;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            display: none;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 480px) {
+            .card-body {
+                padding: 20px;
+            }
+            
+            .card-header .secure-badge {
+                position: static;
+                margin: 10px auto 0;
+                width: fit-content;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2>Complete Your Payment</h2>
+                <div class="secure-badge">
+                    <i class="fas fa-lock"></i> Secure Payment
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="paymentForm">
+                    <input type="hidden" id="bookingId" name="bookingId" th:value="${bookingId}">
+                    
+                    <div class="payment-methods">
+                        <h3 class="method-title">Select Payment Method</h3>
+                        
+                        <div class="payment-option" data-method="bank">
+                            <label>
+                                <div class="payment-icon">
+                                    <i class="fas fa-university"></i>
+                                </div>
+                                <span class="payment-label">Bank Transfer</span>
+                                <div class="radio-custom">
+                                    <input type="radio" name="method" value="bank" required>
+                                    <span class="checkmark"></span>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="payment-option" data-method="upi">
+                            <label>
+                                <div class="payment-icon">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </div>
+                                <span class="payment-label">UPI Payment</span>
+                                <div class="radio-custom">
+                                    <input type="radio" name="method" value="upi">
+                                    <span class="checkmark"></span>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="payment-option" data-method="razorpay">
+                            <label>
+                                <div class="payment-icon">
+                                    <i class="fas fa-credit-card"></i>
+                                </div>
+                                <span class="payment-label">Razorpay</span>
+                                <div class="radio-custom">
+                                    <input type="radio" name="method" value="razorpay">
+                                    <span class="checkmark"></span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="payButton" class="btn" disabled>
+                        <span class="loader" id="buttonLoader"></span>
+                        <span id="buttonText">Proceed to Payment</span>
+                    </button>
+                </form>
+                
+                <div id="paymentResult" class="payment-result"></div>
+                
+                <div class="payment-icons">
+                    <i class="fab fa-cc-visa" style="font-size: 24px; color: #666;"></i>
+                    <i class="fab fa-cc-mastercard" style="font-size: 24px; color: #666;"></i>
+                    <i class="fab fa-cc-amex" style="font-size: 24px; color: #666;"></i>
+                    <i class="fab fa-cc-discover" style="font-size: 24px; color: #666;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script th:inline="javascript">
+        const bookingId = /*[[${bookingId}]]*/ 0;
+        
+        $(document).ready(function() {
+            // Handle payment method selection
+            $('.payment-option').on('click', function() {
+                $('.payment-option').removeClass('selected');
+                $(this).addClass('selected');
+                $(this).find('input[type="radio"]').prop('checked', true);
+                
+                // Enable the pay button when a method is selected
+                $('#payButton').prop('disabled', false);
+            });
+            
+            // For direct radio button clicks
+            $('input[name="method"]').on('change', function() {
+                $('.payment-option').removeClass('selected');
+                $(this).closest('.payment-option').addClass('selected');
+                
+                // Enable the pay button when a method is selected
+                $('#payButton').prop('disabled', false);
+            });
+            
+            // Handle form submission
+			// Handle form submission
+			$('#paymentForm').on('submit', function(e) {
+			    e.preventDefault();
+
+			    // Validate selection
+			    if (!$('input[name="method"]:checked').val()) {
+			        showResult('Please select a payment method.', 'error');
+			        return;
+			    }
+
+			    // Validate booking ID
+			    if (!bookingId) {
+			        showResult('Booking ID is missing. Please refresh the page or contact support.', 'error');
+			        return;
+			    }
+
+			    // Show loading state
+			    $('#buttonLoader').css('display', 'inline-block');
+			    $('#buttonText').text('Processing...');
+			    $('#payButton').prop('disabled', true);
+
+			    // Make the AJAX request
+			    $.post('/user/book/update-payment-status', {
+			        bookingId: bookingId,
+			        method: $('input[name="method"]:checked').val()
+			    })
+			    .done(function(response) {
+			        if (response === "success") {
+			            // ✅ Redirect to booking history
+			            window.location.href = "/user/book/bookings";
+			        } else {
+			            showResult(response || 'Unexpected error occurred.', 'error');
+			        }
+			    })
+			    .fail(function(error) {
+			        showResult('Payment processing failed. Please try again.', 'error');
+			    })
+			    .always(function() {
+			        // Reset button state
+			        $('#buttonLoader').css('display', 'none');
+			        $('#buttonText').text('Proceed to Payment');
+			        $('#payButton').prop('disabled', false);
+			    });
+			});
+
+            
+            // Function to show result message
+            function showResult(message, type) {
+                const resultElement = $('#paymentResult');
+                resultElement.text(message);
+                resultElement.removeClass('success error').addClass(type);
+                resultElement.css('display', 'block');
+                
+                // Scroll to the result
+                $('html, body').animate({
+                    scrollTop: resultElement.offset().top - 20
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>

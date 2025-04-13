@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Manage Parking Rates</title>
+    <style>
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        input[type="number"] {
+            width: 80px;
+        }
+
+        button {
+            padding: 5px 10px;
+        }
+
+        .success {
+            color: green;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align: center;">Set Parking Rates</h2>
+
+<form id="rateForm">
+    <table>
+        <thead>
+        <tr>
+            <th>Parking Name</th>
+            <th>City</th>
+            <th>Type</th>
+            <th>Rates (per hour)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="area : ${parkingAreas}">
+            <td th:text="${area.name}"></td>
+            <td th:text="${area.city}"></td>
+            <td th:text="${area.type}"></td>
+
+            <td>
+                <input type="hidden" name="parkingAreaId" th:value="${area.id}" />
+
+                <input type="number" step="0.01"
+                       th:if="${area.type.equalsIgnoreCase('Car') or area.type.equalsIgnoreCase('Both')}"
+                       class="carRate"
+                       placeholder="Car Rate"
+                       th:value="${area.parkingRate?.carRate}" />
+
+                <input type="number" step="0.01"
+                       th:if="${area.type.equalsIgnoreCase('Bike') or area.type.equalsIgnoreCase('Both')}"
+                       class="bikeRate"
+                       placeholder="Bike Rate"
+                       th:value="${area.parkingRate?.bikeRate}" />
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div style="text-align: center;">
+        <button type="submit">Save All Rates</button>
+    </div>
+
+    <p class="success" id="successMsg" style="display:none;">Rates saved successfully!</p>
+</form>
+
+<script>
+    document.getElementById("rateForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const rows = document.querySelectorAll("tbody tr");
+        const payload = [];
+
+        rows.forEach(row => {
+            const areaId = row.querySelector('input[name="parkingAreaId"]').value;
+            const carRateInput = row.querySelector('.carRate');
+            const bikeRateInput = row.querySelector('.bikeRate');
+
+            payload.push({
+                parkingAreaId: areaId,
+                carRate: carRateInput ? parseFloat(carRateInput.value || 0) : null,
+                bikeRate: bikeRateInput ? parseFloat(bikeRateInput.value || 0) : null
+            });
+        });
+
+        fetch("/admin/rates/save/ajax", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        }).then(response => {
+            if (response.ok) {
+                document.getElementById("successMsg").style.display = "block";
+            } else {
+                alert("Error saving rates.");
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

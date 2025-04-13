@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Update Parking Area</title>
+</head>
+<body>
+
+<h2>Update Parking Area</h2>
+
+<form th:action="@{/admin/parking/update}" th:object="${parkingArea}" method="post">
+    <input type="hidden" th:field="*{id}" />
+    <label for="name">Name:</label>
+    <input type="text" th:field="*{name}" required /><br>
+
+    <label for="location">Location:</label>
+    <input type="text" th:field="*{location}" required /><br>
+
+    <label for="city">City:</label>
+    <input type="text" th:field="*{city}" required /><br>
+
+    <label for="capacity">Capacity:</label>
+    <input type="number" th:field="*{capacity}" required /><br>
+
+    <label for="type">Type:</label>
+    <select id="type" th:field="*{type}">
+        <option value="bike">Bike</option>
+        <option value="car">Car</option>
+        <option value="both">Both</option>
+    </select><br>
+
+	<div id="bikeSlotsSection">
+    <label for="bikeSlots">Bike Slots:</label>
+    <input type="number" th:field="*{bikeSlots}" /><br>
+	</div>
+	
+	<div id="carSlotsSection">
+    <label for="carSlots">Car Slots:</label>
+    <input type="number" th:field="*{carSlots}" /><br>
+	</div>
+	
+    <label for="ownerName">Owner Name:</label>
+    <input type="text" th:field="*{ownerName}" required /><br>
+
+    <button type="submit">Update</button>
+</form>
+<script>
+    // Dynamically show car/bike slots based on selected type
+    const typeSelect = document.getElementById('type');
+    const carSlotsSection = document.getElementById('carSlotsSection');
+    const bikeSlotsSection = document.getElementById('bikeSlotsSection');
+
+    typeSelect.addEventListener('change', function () {
+        const type = typeSelect.value;
+        if (type === 'Both') {
+            carSlotsSection.style.display = 'block';
+            bikeSlotsSection.style.display = 'block';
+        } else if (type === 'Car') {
+            carSlotsSection.style.display = 'block';
+            bikeSlotsSection.style.display = 'none';
+        } else if (type === 'Bike') {
+            carSlotsSection.style.display = 'none';
+            bikeSlotsSection.style.display = 'block';
+        }
+    });
+
+    // Trigger initial type selection
+    typeSelect.dispatchEvent(new Event('change'));
+</script>
+</body>
+</html>

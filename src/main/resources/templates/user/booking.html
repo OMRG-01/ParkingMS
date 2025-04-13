@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Book Parking Slot</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+		:root {
+		            --primary: #3498db;
+		            --secondary: #2ecc71;
+		            --dark: #2c3e50;
+		            --light: #ecf0f1;
+		            --danger: #e74c3c;
+		            --warning: #f39c12;
+		            --gray: #95a5a6;
+		        }
+		        
+		        * {
+		            margin: 0;
+		            padding: 0;
+		            box-sizing: border-box;
+		        }
+		        
+		        body {
+		            font-family: 'Poppins', sans-serif;
+		            background-color: #f5f7fa;
+		            color: #333;
+		            line-height: 1.6;
+		        }
+		        
+		        .container {
+		            max-width: 1000px;
+		            margin: 0 auto;
+		            padding: 20px;
+		        }
+		        
+		        .header {
+		            text-align: center;
+		            margin-bottom: 30px;
+		            padding: 20px 0;
+		            border-bottom: 1px solid #eee;
+		        }
+		        
+		        .header h1 {
+		            color: var(--dark);
+		            font-size: 32px;
+		            margin-bottom: 10px;
+		        }
+		        
+		        .header p {
+		            color: var(--gray);
+		        }
+		        
+		        .booking-form {
+		            background-color: white;
+		            border-radius: 10px;
+		            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+		            padding: 30px;
+		            margin-bottom: 30px;
+		        }
+		        
+		        .form-group {
+		            margin-bottom: 25px;
+		            position: relative;
+		        }
+		        
+		        .form-group label {
+		            display: block;
+		            margin-bottom: 8px;
+		            font-weight: 500;
+		            color: var(--dark);
+		        }
+		        
+		        .form-group select,
+		        .form-group input {
+		            width: 100%;
+		            padding: 12px 15px;
+		            border: 1px solid #ddd;
+		            border-radius: 5px;
+		            font-size: 16px;
+		            transition: all 0.3s;
+		        }
+		        
+		        .form-group select:focus,
+		        .form-group input:focus {
+		            border-color: var(--primary);
+		            outline: none;
+		            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+		        }
+		        
+		        .form-group .icon-input {
+		            position: relative;
+		        }
+		        
+		        .form-group .icon-input i {
+		            position: absolute;
+		            left: 15px;
+		            top: 15px;
+		            color: var(--gray);
+		        }
+		        
+		        .form-group .icon-input select,
+		        .form-group .icon-input input {
+		            padding-left: 45px;
+		        }
+		        
+		        .form-error {
+		            color: var(--danger);
+		            font-size: 12px;
+		            margin-top: 5px;
+		            display: none;
+		        }
+		        
+		        .form-group.error select,
+		        .form-group.error input {
+		            border-color: var(--danger);
+		        }
+		        
+		        .form-group.error .form-error {
+		            display: block;
+		        }
+		        
+		        .price-display {
+		            background-color: #f8f9fa;
+		            border-radius: 5px;
+		            padding: 15px;
+		            margin-bottom: 25px;
+		        }
+		        
+		        .rate-box {
+		            margin-bottom: 10px;
+		            font-size: 18px;
+		            color: var(--dark);
+		        }
+		        
+		        .total-box {
+		            font-size: 24px;
+		            font-weight: 600;
+		            color: var(--primary);
+		        }
+		        
+		        .slot-section {
+		            margin-top: 30px;
+		        }
+		        
+		        .slot-section h3 {
+		            margin-bottom: 20px;
+		            color: var(--dark);
+		            font-size: 20px;
+		            font-weight: 500;
+		        }
+		        
+		        .slot-container {
+		            display: flex;
+		            flex-wrap: wrap;
+		            gap: 15px;
+		            margin-bottom: 30px;
+		        }
+		        
+		        .slot-box {
+		            width: 70px;
+		            height: 70px;
+		            background-color: white;
+		            border: 2px solid #ddd;
+		            border-radius: 8px;
+		            display: flex;
+		            align-items: center;
+		            justify-content: center;
+		            font-weight: 600;
+		            font-size: 16px;
+		            cursor: pointer;
+		            transition: all 0.3s;
+		            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+		        }
+		        
+		        .slot-box:hover:not(.booked) {
+		            transform: translateY(-3px);
+		            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+		        }
+		        
+		        .slot-box.selected {
+		            background-color: var(--secondary);
+		            color: white;
+		            border-color: var(--secondary);
+		        }
+		        
+		        .slot-box.booked {
+		            background-color: #f5f5f5;
+		            color: var(--gray);
+		            border-color: #ddd;
+		            cursor: not-allowed;
+		            position: relative;
+		        }
+		        
+		        .slot-box.booked::after {
+		            content: '';
+		            position: absolute;
+		            top: 0;
+		            left: 0;
+		            right: 0;
+		            bottom: 0;
+		            background-image: linear-gradient(45deg, rgba(0,0,0,0.05) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.05) 75%, transparent 75%);
+		            background-size: 10px 10px;
+		            border-radius: 6px;
+		        }
+		        
+		        .btn {
+		            display: inline-block;
+		            padding: 12px 25px;
+		            border: none;
+		            border-radius: 5px;
+		            font-size: 16px;
+		            font-weight: 500;
+		            cursor: pointer;
+		            transition: all 0.3s;
+		            text-align: center;
+		        }
+		        
+		        .btn-primary {
+		            background-color: var(--primary);
+		            color: white;
+		        }
+		        
+		        .btn-primary:hover {
+		            background-color: #2980b9;
+		        }
+		        
+		        .btn-success {
+		            background-color: var(--secondary);
+		            color: white;
+		        }
+		        
+		        .btn-success:hover {
+		            background-color: #27ae60;
+		        }
+		        
+		        .modal-overlay {
+		            position: fixed;
+		            top: 0;
+		            left: 0;
+		            right: 0;
+		            bottom: 0;
+		            background-color: rgba(0, 0, 0, 0.5);
+		            display: flex;
+		            align-items: center;
+		            justify-content: center;
+		            z-index: 1000;
+		            display: none;
+		        }
+		        
+		        .modal {
+		            background-color: white;
+		            border-radius: 10px;
+		            padding: 30px;
+		            width: 90%;
+		            max-width: 500px;
+		            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+		            position: fixed;
+		            top: 50%;
+		            left: 50%;
+		            transform: translate(-50%, -50%);
+		        }
+		        
+		        .modal-header {
+		            margin-bottom: 20px;
+		            text-align: center;
+		        }
+		        
+		        .modal-header h3 {
+		            font-size: 24px;
+		            color: var(--dark);
+		        }
+		        
+		        .modal-body {
+		            margin-bottom: 30px;
+		        }
+		        
+		        .modal-footer {
+		            display: flex;
+		            justify-content: center;
+		        }
+		        
+		        .otp-input {
+					display: block;              /* Makes margin: auto work */
+					    text-align: center;
+					    letter-spacing: 15px;
+					    font-size: 24px;
+					    padding: 10px;
+					    margin: 20px auto;           /* Auto centers horizontally */
+					    width: 60%;        
+		        }
+		        
+		        .error-message {
+		            color: var(--danger);
+		            margin-top: 10px;
+		            text-align: center;
+		            display: none;
+		        }
+		        
+		        .steps {
+		            display: flex;
+		            justify-content: space-between;
+		            margin-bottom: 30px;
+		            position: relative;
+		        }
+		        
+		        .steps::before {
+		            content: '';
+		            position: absolute;
+		            top: 20px;
+		            left: 0;
+		            right: 0;
+		            height: 2px;
+		            background-color: #ddd;
+		            z-index: 1;
+		        }
+		        
+		        .step {
+		            text-align: center;
+		            position: relative;
+		            z-index: 2;
+		            width: 30%;
+		        }
+		        
+		        .step-icon {
+		            width: 40px;
+		            height: 40px;
+		            border-radius: 50%;
+		            background-color: #eee;
+		            display: flex;
+		            align-items: center;
+		            justify-content: center;
+		            margin: 0 auto 10px;
+		            color: var(--gray);
+		            border: 2px solid #ddd;
+		            transition: all 0.3s;
+		            position: relative;
+		            background-color: white;
+		        }
+		        
+		        .step.active .step-icon {
+		            background-color: var(--primary);
+		            color: white;
+		            border-color: var(--primary);
+		        }
+		        
+		        .step.completed .step-icon {
+		            background-color: var(--secondary);
+		            color: white;
+		            border-color: var(--secondary);
+		        }
+		        
+		        .step-label {
+		            font-size: 14px;
+		            color: var(--gray);
+		            font-weight: 500;
+		        }
+		        
+		        .step.active .step-label {
+		            color: var(--primary);
+		            font-weight: 600;
+		        }
+		        
+		        .step.completed .step-label {
+		            color: var(--secondary);
+		            font-weight: 600;
+		        }
+		        
+		        .toast {
+		            position: fixed;
+		            top: 20px;
+		            right: 20px;
+		            background-color: var(--danger);
+		            color: white;
+		            padding: 15px 20px;
+		            border-radius: 5px;
+		            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+		            z-index: 1001;
+		            max-width: 350px;
+		            display: none;
+		            animation: slideIn 0.3s ease-out;
+		        }
+		        
+		        @keyframes slideIn {
+		            from {
+		                transform: translateX(100%);
+		                opacity: 0;
+		            }
+		            to {
+		                transform: translateX(0);
+		                opacity: 1;
+		            }
+		        }
+		        
+		        .slot-error {
+		            color: var(--danger);
+		            margin-top: 10px;
+		            text-align: center;
+		            display: none;
+		        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-car"></i> Vehicle Parking System</h1>
+            <p>Book your parking slot in just a few steps</p>
+        </div>
+        
+        <div class="steps">
+            <div class="step active">
+                <div class="step-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="step-label">Select Location</div>
+            </div>
+            <div class="step">
+                <div class="step-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="step-label">Choose Slot</div>
+            </div>
+            <div class="step">
+                <div class="step-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="step-label">Payment</div>
+            </div>
+        </div>
+        
+        <div class="booking-form">
+            <form method="post" th:action="@{/user/book/submit}">
+                <input type="hidden" name="userId" th:value="${userId}">
+                <input type="hidden" id="hiddenParkingId" name="parkingId">
+                <input type="hidden" id="selectedVehicleType" />
+                <input type="hidden" id="hiddenUserId" th:value="${userId}" />
+                <input type="hidden" name="selectedSlot" id="selectedSlot">
+                
+                <div class="form-group">
+                    <label for="cityDropdown"><i class="fas fa-city"></i> Select City</label>
+                    <div class="icon-input">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <select id="cityDropdown">
+                            <option value="">Select City</option>
+                            <option th:each="city : ${cities}" th:value="${city}" th:text="${city}"></option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="parkingDropdown"><i class="fas fa-parking"></i> Parking Area</label>
+                    <div class="icon-input">
+                        <i class="fas fa-car-side"></i>
+                        <select id="parkingDropdown">
+                            <option value="">Select Parking</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicleId"><i class="fas fa-car"></i> Your Vehicle</label>
+                    <div class="icon-input">
+                        <i class="fas fa-car-alt"></i>
+                        <select name="vehicleId">
+                            <option value="">Select Vehicle</option>
+                            <option th:each="v : ${vehicles}" th:value="${v.id}"
+                                    th:text="${v.type} + ' - ' + ${v.numberPlate}"></option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="hours"><i class="fas fa-clock"></i> Booking Duration</label>
+                    <div class="icon-input">
+                        <i class="fas fa-hourglass-half"></i>
+                        <input type="number" name="hours" min="1" placeholder="Enter Hours">
+                    </div>
+                </div>
+                
+                <div class="price-display">
+                    <div id="rateDisplay" class="rate-box">Rate: Select vehicle and parking</div>
+                    <div id="totalAmount" class="total-box">Total: ₹0</div>
+                </div>
+                
+                <div id="slotSection" class="slot-section" style="display:none;">
+                    <h3><i class="fas fa-car-side"></i> Select a Parking Slot</h3>
+                    <div id="slotContainer" class="slot-container"></div>
+                </div>
+                
+                <button type="submit" id="confirmButton" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-check-circle"></i> Book Now
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmationPopUp" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-check-circle"></i> Confirm Booking</h3>
+            </div>
+            <div class="modal-body">
+                <p style="text-align: center; font-size: 18px;">Your Total Amount: <span id="confirmationAmount" style="font-weight: 600; color: var(--primary);"></span></p>
+                <p style="text-align: center; margin-top: 10px;">Click Pay to proceed with payment</p>
+            </div>
+            <div class="modal-footer">
+                <button id="payButton" class="btn btn-success">
+                    <i class="fas fa-credit-card"></i> Pay Now
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- OTP Modal -->
+    <div id="otpModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Verification Required</h3>
+            </div>
+            <div class="modal-body">
+                <p style="text-align: center;">We've sent an OTP to your registered email address</p>
+                <input type="text" id="otpInput" class="otp-input" placeholder="Enter OTP" maxlength="6">
+                <div id="otpError" class="error-message">Invalid OTP, please try again.</div>
+            </div>
+            <div class="modal-footer">
+                <button id="verifyOtpButton" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Verify OTP
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <input type="hidden" id="hiddenBookingId" value="${bookingId}">
+    
+    <!-- AJAX Script -->
+    <script>
+        $(document).ready(function() {
+            // Update steps based on progress
+            function updateSteps(activeStep) {
+                $('.step').removeClass('active completed');
+                
+                for(let i = 1; i <= activeStep; i++) {
+                    $('.step:nth-child(' + i + ')').addClass('completed');
+                }
+                
+                $('.step:nth-child(' + (activeStep + 1) + ')').addClass('active');
+            }
+            
+            // Initially set first step active
+            updateSteps(0);
+            
+            // Load vehicles and update slots + rate
+            $('select[name="vehicleId"]').on('change', function () {
+                const selectedVehicleId = $(this).val();
+                
+                if (selectedVehicleId) {
+                    updateSteps(1);
+                    
+                    $.get('/user/book/vehicle-type', { vehicleId: selectedVehicleId }, function (data) {
+                        const vehicleType = data.type;
+                        $('#selectedVehicleType').val(vehicleType); // Save vehicle type
+                        
+                        const parkingId = $('#parkingDropdown').val();
+                        if (!parkingId) return;
+                        
+                        $.get("/user/book/parking-details", { parkingId: parkingId }, function (data) {
+                            const carSlots = data.carSlots;
+                            const bikeSlots = data.bikeSlots;
+                            const bookedSlots = data.bookedSlots;
+                            const carRate = data.carRate;
+                            const bikeRate = data.bikeRate;
+                            
+                            let slotsHtml = '';
+                            $('#slotContainer').empty(); // Clear previous slots
+                            
+                            if (vehicleType === 'Car') {
+                                if (carRate === 0 || carSlots === 0) {
+                                    $('#slotContainer').html('<p>No Car Parking Available</p>');
+                                    $('#rateDisplay').html('<p>No Rate Available</p>');
+                                } else {
+                                    for (let i = 1; i <= carSlots; i++) {
+                                        const slot = `C${i}`;
+                                        const isBooked = bookedSlots.includes(slot);
+                                        slotsHtml += `<div class="slot-box ${isBooked ? 'booked' : ''}" 
+                                                      data-slot="${slot}" 
+                                                      ${isBooked ? 'style="pointer-events: none;"' : ''}>
+                                                      ${slot}
+                                                      ${isBooked ? '<i class="fas fa-lock"></i>' : ''}
+                                                     </div>`;
+                                    }
+                                    $('#rateDisplay').text(`Rate: ₹${carRate}/hour`);
+                                    $('#rateDisplay').data('carRate', carRate);
+                                    $('#slotContainer').html(slotsHtml);
+                                }
+                            } else if (vehicleType === 'Bike') {
+                                if (bikeRate === 0 || bikeSlots === 0) {
+                                    $('#slotContainer').html('<p>No Bike Parking Available</p>');
+                                    $('#rateDisplay').html('<p>No Rate Available</p>');
+                                } else {
+                                    for (let i = 1; i <= bikeSlots; i++) {
+                                        const slot = `B${i}`;
+                                        const isBooked = bookedSlots.includes(slot);
+                                        slotsHtml += `<div class="slot-box ${isBooked ? 'booked' : ''}" 
+                                                      data-slot="${slot}" 
+                                                      ${isBooked ? 'style="pointer-events: none;"' : ''}>
+                                                      ${slot}
+                                                      ${isBooked ? '<i class="fas fa-lock"></i>' : ''}
+                                                     </div>`;
+                                    }
+                                    $('#rateDisplay').text(`Rate: ₹${bikeRate}/hour`);
+                                    $('#rateDisplay').data('bikeRate', bikeRate);
+                                    $('#slotContainer').html(slotsHtml);
+                                }
+                            }
+                            
+                            $('#slotSection').show();
+                        });
+                    });
+                }
+            });
+            
+            // Calculate total amount
+            $('input[name="hours"]').on('input', function () {
+                const hours = $(this).val();
+                const vehicleType = $('#selectedVehicleType').val();
+                let rate = 0;
+                
+                if (vehicleType === 'Car') {
+                    rate = $('#rateDisplay').data('carRate');
+                } else if (vehicleType === 'Bike') {
+                    rate = $('#rateDisplay').data('bikeRate');
+                }
+                
+                if (hours && rate) {
+                    const totalAmount = hours * rate;
+                    $('#totalAmount').text(`Total: ₹${totalAmount}`);
+                }
+            });
+            
+            let createdBookingId = null;
+            
+            // Submit handler with confirmation
+            $('#confirmButton').on('click', function (e) {
+                e.preventDefault();
+                
+                // Check if slot is selected
+                if (!$('#selectedSlot').val()) {
+                    alert('Please select a parking slot');
+                    return;
+                }
+                
+                updateSteps(2);
+                
+                const totalAmount = $('#totalAmount').text();
+                if (totalAmount) {
+                    $('#confirmationAmount').text(totalAmount);
+                    $('#confirmationPopUp').show();
+                    
+                    const formData = $('form').serialize();
+                    
+                    $.post('/user/book/submit', formData, function (response) {
+                        console.log("Booking Success:", response.message);
+                        createdBookingId = response.bookingId;
+                    }).fail(function (err) {
+                        alert("Booking failed. Please try again.");
+                        console.error("Booking error:", err);
+                    });
+                }
+            });
+            
+            // Send OTP on Pay button click
+            $('#payButton').on('click', function () {
+                const userId = $('#hiddenUserId').val();
+                console.log("User ID on Pay Button Click:", userId);
+                
+                // Hide confirmation popup
+                $('#confirmationPopUp').hide();
+                
+                // Show loading animation in OTP modal
+                $('#otpModal').show();
+                
+                $.post('/user/send-otp', { userId: userId }, function (response) {
+                    console.log("OTP Send Response:", response);
+                    if (response === "OTP sent to email") {
+                        // OTP modal is already shown
+                    } else {
+                        alert('Error sending OTP: ' + response);
+                        $('#otpModal').hide();
+                    }
+                }).fail(function(err) {
+                    console.error("Error sending OTP:", err);
+                    $('#otpModal').hide();
+                });
+            });
+            
+            // OTP verification
+            $('#verifyOtpButton').on('click', function () {
+                const otp = $('#otpInput').val();
+                const userId = $('#hiddenUserId').val();
+                
+                $(this).html('<i class="fas fa-spinner fa-spin"></i> Verifying...');
+                $(this).prop('disabled', true);
+                
+                $.post('/user/verify-otp', { otp: otp, userId: userId }, function (response) {
+                    if (response.trim() === "OTP verified successfully") {
+                        window.location.href = '/user/book/gateway?bookingId=' + createdBookingId;
+                    } else {
+                        $('#otpError').show();
+                        $('#verifyOtpButton').html('<i class="fas fa-check"></i> Verify OTP');
+                        $('#verifyOtpButton').prop('disabled', false);
+                    }
+                });
+            });
+            
+            // Load parkings when city is selected
+            $('#cityDropdown').on('change', function () {
+                const selectedCity = $(this).val();
+                $('#parkingDropdown').empty().append('<option value="">Loading...</option>');
+                $('#slotSection').hide();
+                
+                $.get("/user/book/parking-by-city", { city: selectedCity }, function (data) {
+                    $('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
+                    data.forEach(function (parking) {
+                        $('#parkingDropdown').append('<option value="' + parking.id + '">' + parking.name + '</option>');
+                    });
+                });
+            });
+            
+            // Save parkingId in hidden input when parking is selected
+            $('#parkingDropdown').on('change', function () {
+                const selectedParkingId = $(this).val();
+                $('#hiddenParkingId').val(selectedParkingId); // Set hidden input
+                $('#slotSection').hide();
+            });
+            
+            // Slot selection
+            $(document).on('click', '.slot-box', function () {
+                if (!$(this).hasClass('booked')) {
+                    $('.slot-box').removeClass('selected');
+                    $(this).addClass('selected');
+                    const selectedSlot = $(this).data('slot');
+                    $('#selectedSlot').val(selectedSlot);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

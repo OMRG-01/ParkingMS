@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Admin Dashboard - Parking Management System</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --primary-light: #34495e;
+      --secondary: #3498db;
+      --secondary-light: #5dade2;
+      --success: #2ecc71;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --dark: #1a1a1a;
+      --light: #f8f9fa;
+      --gray: #95a5a6;
+      --gray-light: #ecf0f1;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f4f7fa;
+      color: var(--dark);
+      overflow-x: hidden;
+    }
+    
+    /* Layout */
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      background-color: var(--primary);
+      color: white;
+      padding: 20px 0;
+      position: fixed;
+      width: 250px;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 999;
+      transition: var(--transition);
+    }
+    
+    .sidebar-header {
+      padding: 15px 25px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 30px;
+      gap: 10px;
+    }
+    
+    .sidebar-header .logo {
+      font-size: 22px;
+      font-weight: bold;
+    }
+    
+    .sidebar-header i {
+      font-size: 24px;
+    }
+    
+    .admin-info {
+      padding: 0 25px;
+      margin-bottom: 30px;
+    }
+    
+    .admin-info .avatar {
+      width: 64px;
+      height: 64px;
+      background-color: var(--secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    
+    .admin-info .name {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .admin-info .role {
+      color: var(--gray-light);
+      font-size: 14px;
+      margin-top: 3px;
+    }
+    
+    .nav-menu {
+      list-style: none;
+      margin-top: 20px;
+    }
+    
+    .nav-item {
+      margin-bottom: 5px;
+    }
+    
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 12px 25px;
+      color: #ddd;
+      text-decoration: none;
+      transition: var(--transition);
+      border-left: 3px solid transparent;
+      gap: 12px;
+    }
+    
+    .nav-link:hover, .nav-link.active {
+      background-color: var(--primary-light);
+      color: white;
+      border-left-color: var(--secondary);
+    }
+    
+    .nav-link i {
+      width: 20px;
+      text-align: center;
+    }
+    
+    /* Main Content */
+    .main-content {
+      grid-column: 2;
+      padding: 25px;
+      margin-left: 250px;
+      transition: var(--transition);
+    }
+    
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    
+    .page-title {
+      font-size: 24px;
+      color: var(--primary);
+      font-weight: bold;
+    }
+    
+    .main-header .actions {
+      display: flex;
+      gap: 15px;
+    }
+    
+    /* Dashboard Cards */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-card .icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 40px;
+      opacity: 0.2;
+      color: var(--primary);
+    }
+    
+    .stat-card .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    
+    .stat-card .stat-label {
+      color: var(--gray);
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    
+    .stat-card .stat-change {
+      color: var(--success);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    /* Action Cards */
+    .action-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+    
+    .action-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--dark);
+    }
+    
+    .action-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-card .card-icon {
+      height: 120px;
+      background-color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: white;
+    }
+    
+    .action-card .card-content {
+      padding: 20px;
+    }
+    
+    .action-card .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .action-card .card-description {
+      color: var(--gray);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    /* Notifications */
+    .notifications-section {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    #notificationList {
+      list-style-type: none;
+      padding: 0;
+    }
+    
+    .notification-item {
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      background-color: var(--gray-light);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+      animation: fadeIn 0.5s;
+    }
+    
+    .notification-item.new {
+      background-color: #e8f4fd;
+      border-left: 3px solid var(--secondary);
+    }
+    
+    .notification-item i {
+      color: var(--secondary);
+      font-size: 18px;
+      margin-top: 2px;
+    }
+    
+    .notification-content {
+      flex: 1;
+    }
+    
+    .notification-content .notification-time {
+      color: var(--gray);
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    
+    .notification-content .notification-text {
+      font-size: 14px;
+      color: var(--dark);
+    }
+    
+    /* Flash Messages */
+    .flash-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 350px;
+    }
+    
+    .flash-message {
+      padding: 15px 20px;
+      background-color: white;
+      border-left: 4px solid var(--secondary);
+      border-radius: 6px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      animation: slideIn 0.3s, fadeOut 0.5s 5s forwards;
+      opacity: 1;
+    }
+    
+    .flash-message .flash-icon {
+      color: var(--secondary);
+      font-size: 20px;
+    }
+    
+    .flash-message .flash-content {
+      flex: 1;
+    }
+    
+    .flash-message .flash-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .flash-message .flash-text {
+      font-size: 14px;
+      color: var(--gray);
+    }
+    
+    .flash-message .flash-close {
+      color: var(--gray);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 16px;
+    }
+    
+    .flash-success {
+      border-left-color: var(--success);
+    }
+    
+    .flash-success .flash-icon {
+      color: var(--success);
+    }
+    
+    .flash-warning {
+      border-left-color: var(--warning);
+    }
+    
+    .flash-warning .flash-icon {
+      color: var(--warning);
+    }
+    
+    .flash-error {
+      border-left-color: var(--danger);
+    }
+    
+    .flash-error .flash-icon {
+      color: var(--danger);
+    }
+    
+    /* Animations */
+    @keyframes slideIn {
+      from {
+        transform: translateX(30px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    /* Mobile Responsiveness */
+    @media (max-width: 1024px) {
+      .admin-layout {
+        grid-template-columns: 1fr;
+      }
+      
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.active {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 15px;
+      }
+      
+      .mobile-menu-toggle {
+        display: block;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-grid,
+      .action-cards {
+        grid-template-columns: 1fr;
+      }
+      
+      .stat-card {
+        margin-bottom: 15px;
+      }
+      
+      .main-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      .main-header .actions {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-parking"></i>
+        <div class="logo">ParkEasy Admin</div>
+      </div>
+      
+      <div class="admin-info">
+        <div class="avatar" th:text="${#strings.substring(session.loggedInUser.name,0,1)}">A</div>
+        <div class="name" th:text="${session.loggedInUser.name}">Admin User</div>
+        <div class="role">System Administrator</div>
+      </div>
+      
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="#" class="nav-link active">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/admin/parking/all}" class="nav-link">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Parking Areas</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/admin/rates}" class="nav-link">
+            <i class="fas fa-dollar-sign"></i>
+            <span>Manage Rates</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/admin/bookings}" class="nav-link">
+            <i class="fas fa-calendar-check"></i>
+            <span>Bookings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/admin/users}" class="nav-link">
+            <i class="fas fa-users"></i>
+            <span>Users</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/admin/reports}" class="nav-link">
+            <i class="fas fa-chart-line"></i>
+            <span>Reports</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/admin/settings}" class="nav-link">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a th:href="@{/logout}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="main-header">
+        <h1 class="page-title">Admin Dashboard</h1>
+        <div class="actions">
+          <button id="refreshBtn" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Refresh Data
+          </button>
+        </div>
+      </div>
+      
+      <!-- Stats Overview -->
+      <div class="dashboard-grid">
+        <div class="stat-card">
+          <i class="fas fa-car icon"></i>
+          <div class="stat-label">Total Parking Areas</div>
+        <div class="stat-value" th:text="${totalParkingAreas}"></div>
+          <div class="stat-change">
+            <i class="fas fa-arrow-up"></i> 3 new this month
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <i class="fas fa-calendar-check icon"></i>
+          <div class="stat-label">Active Bookings</div>
+          <div class="stat-value" th:text="${activeBookings}"></div>
+          <div class="stat-change">
+            <i class="fas fa-arrow-up"></i> 12% increase
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <i class="fas fa-users icon"></i>
+          <div class="stat-label">Registered Users</div>
+          <div class="stat-value" th:text="${totalUsers}"></div>
+          <div class="stat-change">
+            <i class="fas fa-arrow-up"></i> 7% this week
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <i class="fas fa-dollar-sign icon"></i>
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-value">₹42,580</div>
+          <div class="stat-change">
+            <i class="fas fa-arrow-up"></i> 15% this month
+          </div>
+        </div>
+      </div>
+      
+      <!-- Action Cards -->
+      <h2 class="section-title">Quick Actions</h2>
+      <div class="action-cards">
+        <a th:href="@{/admin/parking/add}" class="action-card">
+          <div class="card-icon" style="background-color: #3498db;">
+            <i class="fas fa-plus-circle"></i>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Add Parking Area</h3>
+            <p class="card-description">Create a new parking location with capacity and rate details</p>
+          </div>
+        </a>
+        
+        <a th:href="@{/admin/parking/all}" class="action-card">
+          <div class="card-icon" style="background-color: #2ecc71;">
+            <i class="fas fa-map-marked-alt"></i>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">View All Parking Areas</h3>
+            <p class="card-description">View and manage all parking locations in the system</p>
+          </div>
+        </a>
+        
+        <a th:href="@{/admin/rates}" class="action-card">
+          <div class="card-icon" style="background-color: #f39c12;">
+            <i class="fas fa-money-bill-wave"></i>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Manage Rates</h3>
+            <p class="card-description">Update pricing and special rates for different vehicles</p>
+          </div>
+        </a>
+        
+        <a th:href="@{/admin/reports}" class="action-card">
+          <div class="card-icon" style="background-color: #9b59b6;">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">View Reports</h3>
+            <p class="card-description">Generate occupancy and revenue reports for analysis</p>
+          </div>
+        </a>
+      </div>
+      
+      <!-- Notifications Section -->
+      <div class="notifications-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <i class="fas fa-bell"></i> Recent Notifications
+          </h2>
+          <button id="clearNotifications" class="btn-text">Clear All</button>
+        </div>
+        <div id="notifications">
+          <ul id="notificationList"></ul>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Flash Message Container -->
+  <div class="flash-container" id="flashContainer"></div>
+  
+  <script>
+    
+    // Function to fetch notifications
+    function fetchNotifications() {
+      // In production, use this to fetch real data:
+     
+      fetch('/admin/notifications/latest')
+        .then(res => res.json())
+        .then(data => {
+          renderNotifications(data);
+        })
+        .catch(error => {
+          console.error('Error fetching notifications:', error);
+          // Show error flash message
+          showFlashMessage('Error', 'Failed to fetch notifications', 'error');
+        });
+    
+      
+     
+    }
+    
+    // Function to render notifications
+    function renderNotifications(notifications) {
+      const list = document.getElementById('notificationList');
+      list.innerHTML = ''; // Clear the list
+      
+      if (notifications.length === 0) {
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'notification-item';
+        emptyItem.innerHTML = `
+          <i class="fas fa-info-circle"></i>
+          <div class="notification-content">
+            <div class="notification-text">No notifications at this time.</div>
+          </div>
+        `;
+        list.appendChild(emptyItem);
+        return;
+      }
+      
+      notifications.forEach((notif, index) => {
+        const li = document.createElement('li');
+        li.className = `notification-item ${notif.isNew ? 'new' : ''}`;
+        li.setAttribute('data-id', index);
+        
+        li.innerHTML = `
+          <i class="fas ${notif.isNew ? 'fa-bell' : 'fa-bell-slash'}"></i>
+          <div class="notification-content">
+            <div class="notification-text">${notif.message}</div>
+            <div class="notification-time">${notif.time}</div>
+          </div>
+        `;
+        
+        list.appendChild(li);
+        
+        // Add auto-disappear for new notifications after 30 seconds
+        if (notif.isNew) {
+          setTimeout(() => {
+            const notifElement = document.querySelector(`[data-id="${index}"]`);
+            if (notifElement) {
+              notifElement.style.opacity = '0';
+              setTimeout(() => {
+                if (notifElement.parentNode) {
+                  notifElement.parentNode.removeChild(notifElement);
+                }
+              }, 500);
+              
+              // Show flash message for the notification
+              showFlashMessage('New Notification', notif.message, 'info');
+            }
+          }, 30000); // 30 seconds
+        }
+      });
+    }
+    
+    // Function to show flash messages
+    function showFlashMessage(title, message, type = 'info') {
+      const container = document.getElementById('flashContainer');
+      const id = 'flash-' + Date.now();
+      
+      const flashDiv = document.createElement('div');
+      flashDiv.className = `flash-message flash-${type}`;
+      flashDiv.id = id;
+      
+      let icon = 'info-circle';
+      if (type === 'success') icon = 'check-circle';
+      if (type === 'warning') icon = 'exclamation-triangle';
+      if (type === 'error') icon = 'times-circle';
+      
+      flashDiv.innerHTML = `
+        <div class="flash-icon">
+          <i class="fas fa-${icon}"></i>
+        </div>
+        <div class="flash-content">
+          <div class="flash-title">${title}</div>
+          <div class="flash-text">${message}</div>
+        </div>
+        <button class="flash-close" onclick="closeFlash('${id}')">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      
+      container.appendChild(flashDiv);
+      
+      // Auto-remove after 5 seconds (animation handles the fade out)
+      setTimeout(() => {
+        closeFlash(id);
+      }, 5000);
+    }
+    
+    // Function to close flash message
+    function closeFlash(id) {
+      const flash = document.getElementById(id);
+      if (flash) {
+        flash.style.opacity = '0';
+        flash.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          if (flash.parentNode) {
+            flash.parentNode.removeChild(flash);
+          }
+        }, 300);
+      }
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initial fetch of notifications
+      fetchNotifications();
+      
+      // Set up polling for notifications every 30 seconds
+      setInterval(fetchNotifications, 30000);
+      
+      // Refresh button
+      document.getElementById('refreshBtn').addEventListener('click', function() {
+        fetchNotifications();
+        showFlashMessage('Refreshed', 'Dashboard data has been updated', 'success');
+      });
+      
+      // Clear notifications button
+      document.getElementById('clearNotifications').addEventListener('click', function() {
+        document.getElementById('notificationList').innerHTML = '';
+        showFlashMessage('Cleared', 'All notifications have been cleared', 'info');
+      });
+      
+      // Show welcome flash message
+      setTimeout(() => {
+        showFlashMessage('Welcome Back', 'You have 4 new notifications', 'success');
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

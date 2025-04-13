@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Parking Bookings</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <style>
+        :root {
+            --primary: #3a86ff;
+            --secondary: #ff006e;
+            --success: #38b000;
+            --warning: #ffbe0b;
+            --danger: #e63946;
+            --dark: #1d3557;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #dee2e6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            padding: 30px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .header p {
+            color: var(--gray);
+            font-size: 16px;
+        }
+        
+        .no-bookings {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .no-bookings i {
+            font-size: 48px;
+            color: var(--light-gray);
+            margin-bottom: 20px;
+        }
+        
+        .no-bookings p {
+            font-size: 18px;
+            color: var(--gray);
+        }
+        
+        .tickets-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+        }
+        
+        .ticket-wrapper {
+            position: relative;
+        }
+        
+        .ticket {
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: relative;
+            background-image: url('/templates/ticket.png');
+            background-size: cover;
+            background-position: center;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .ticket.expired {
+            filter: grayscale(1) opacity(0.7) blur(2px);
+            pointer-events: none;
+        }
+        
+        .expired-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            background-color: var(--danger);
+            color: white;
+            font-weight: bold;
+            padding: 8px 30px;
+            font-size: 24px;
+            z-index: 10;
+            border: 2px solid white;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .ticket-wrapper.expired .expired-label {
+            display: block;
+        }
+        
+        .ticket-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            position: relative;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.3);
+        }
+        
+        .ticket-company {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .company-logo {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .company-logo i {
+            font-size: 24px;
+            color: var(--primary);
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .booking-id {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .ticket-body {
+            padding: 25px;
+            position: relative;
+        }
+        
+        .ticket-row {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .location-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .location {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .location-label {
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .location-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+        
+        .connector {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+        }
+        
+        .line {
+            flex-grow: 1;
+            height: 2px;
+            background-color: var(--primary);
+            margin: 0 5px;
+        }
+        
+        .ticket-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            padding: 10px 0;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .info-value {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--dark);
+            word-break: break-word;
+        }
+        
+        .ticket-time {
+            margin-top: 25px;
+            background-color: rgba(58, 134, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .time-item {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .time-label {
+            font-size: 12px;
+            color: var(--primary);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .time-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+        
+        .time-day {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .time-date {
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .time-hour {
+            display: block;
+            color: var(--secondary);
+        }
+        
+        .ticket-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .btn-download {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn-download:hover {
+            background-color: #2a78ff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn-download i {
+            margin-right: 8px;
+        }
+        
+        .ticket-footer {
+            border-top: 2px dashed rgba(0, 0, 0, 0.1);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .barcode {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .barcode img {
+            max-width: 100%;
+            height: 50px;
+        }
+        
+        .ticket-status {
+            padding: 5px 15px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .ticket-status.active {
+            background-color: rgba(56, 176, 0, 0.1);
+            color: var(--success);
+        }
+        
+        .ticket-status.expired {
+            background-color: rgba(230, 57, 70, 0.1);
+            color: var(--danger);
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .tickets-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .ticket-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Your Parking Bookings</h1>
+            <p>View and manage all your parking reservations</p>
+        </div>
+        
+        <div th:if="${bookings.size() == 0}" class="no-bookings">
+            <i class="fas fa-ticket-alt"></i>
+            <p>You don't have any bookings yet.</p>
+        </div>
+        
+        <div th:if="${bookings.size() > 0}" class="tickets-container">
+            <div th:each="booking : ${bookings}" th:id="'ticket-' + ${booking.id}" class="ticket-wrapper">
+                <div class="expired-label">EXPIRED</div>
+                <div class="ticket" th:data-until="${booking.bookedUntil}">
+                    <div class="ticket-header">
+                        <div class="ticket-company">
+                            <div class="company-logo">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="company-name">Parking Pass</div>
+                        </div>
+                        <div class="booking-id">
+                            <span>Booking #</span>
+                            <span th:text="${booking.id}"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="ticket-body">
+                        <div class="ticket-row">
+                            <div class="location-info">
+                                <div class="location">
+                                    <div class="location-label">Parking Area</div>
+                                    <div class="location-value" th:text="${booking.parkingArea.location}"></div>
+                                </div>
+                                <div class="connector">
+                                    <div class="dot"></div>
+                                    <div class="line"></div>
+                                    <div class="dot"></div>
+                                </div>
+                                <div class="location">
+                                    <div class="location-label">Slot</div>
+                                    <div class="location-value" th:text="${booking.slot}"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket-info">
+                            <div class="info-item">
+                                <div class="info-label">Vehicle Model</div>
+                                <div class="info-value" th:text="${booking.vehicle.model}"></div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">License Plate</div>
+                                <div class="info-value" th:text="${booking.vehicle.numberPlate}"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket-time">
+                            <div class="time-item">
+                                <div class="time-label">From</div>
+                                <div class="time-value">
+                                    <span class="time-day" th:text="${#temporals.format(booking.bookingTime, 'EEEE')}"></span>
+                                    <span class="time-date" th:text="${#temporals.format(booking.bookingTime, 'dd MMM yyyy')}"></span>
+                                    <span class="time-hour" th:text="${#temporals.format(booking.bookingTime, 'hh:mm a')}"></span>
+                                </div>
+                            </div>
+                            <div class="time-item">
+                                <div class="time-label">Until</div>
+                                <div class="time-value">
+                                    <span class="time-day" th:text="${#temporals.format(booking.bookedUntil, 'EEEE')}"></span>
+                                    <span class="time-date" th:text="${#temporals.format(booking.bookedUntil, 'dd MMM yyyy')}"></span>
+                                    <span class="time-hour" th:text="${#temporals.format(booking.bookedUntil, 'hh:mm a')}"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket-actions">
+                            <button class="btn-download" th:onclick="'downloadTicket(' + ${booking.id} + ')'">
+                                <i class="fas fa-download"></i> Download Ticket
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="ticket-footer">
+                        <div class="barcode">
+                            <!-- Using a placeholder barcode image. In a real app, you might generate this dynamically -->
+                            <svg th:id="'barcode-' + ${booking.id}" class="barcode-svg"></svg>
+                        </div>
+                        <div class="ticket-status active">Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get current timestamp
+            const now = moment();
+            
+            // Check each ticket's expiration
+            document.querySelectorAll('.ticket').forEach(ticket => {
+                const bookedUntil = moment(ticket.getAttribute('data-until'));
+                const ticketWrapper = ticket.closest('.ticket-wrapper');
+                const ticketStatus = ticket.querySelector('.ticket-status');
+                
+                // If booking is expired
+                if (now.isAfter(bookedUntil)) {
+                    ticketWrapper.classList.add('expired');
+                    ticket.classList.add('expired');
+                    if (ticketStatus) {
+                        ticketStatus.classList.remove('active');
+                        ticketStatus.classList.add('expired');
+                        ticketStatus.textContent = 'Expired';
+                    }
+                }
+            });
+            
+            // Generate barcodes for each ticket
+            generateBarcodes();
+        });
+        
+        function generateBarcodes() {
+            // Simple function to create SVG barcodes
+            const tickets = document.querySelectorAll('.ticket');
+            
+            tickets.forEach(ticket => {
+                const bookingId = ticket.closest('.ticket-wrapper').id.replace('ticket-', '');
+                const svgElement = document.getElementById('barcode-' + bookingId);
+                
+                if (svgElement) {
+                    // Set SVG attributes
+                    svgElement.setAttribute('width', '200');
+                    svgElement.setAttribute('height', '50');
+                    svgElement.setAttribute('viewBox', '0 0 200 50');
+                    
+                    // Generate a simple barcode-like pattern based on the booking ID
+                    let barcodeHTML = '';
+                    const numBars = 30;
+                    const barWidth = 200 / numBars;
+                    
+                    for (let i = 0; i < numBars; i++) {
+                        // Generate random height for each bar based on booking ID
+                        const height = 30 + (((bookingId.charCodeAt(i % bookingId.length) || i) * 17) % 20);
+                        const x = i * barWidth;
+                        
+                        // Skip some bars to create gaps
+                        if (i % 4 !== 0) {
+                            barcodeHTML += `<rect x="${x}" y="${(50-height)/2}" width="${barWidth-1}" height="${height}" fill="black" />`;
+                        }
+                    }
+                    
+                    svgElement.innerHTML = barcodeHTML;
+                }
+            });
+        }
+        
+        function downloadTicket(bookingId) {
+            const ticketElement = document.getElementById('ticket-' + bookingId);
+            
+            // Check if ticket is expired
+            if (ticketElement.classList.contains('expired')) {
+                alert('This ticket has expired and cannot be downloaded.');
+                return;
+            }
+            
+            // Clone the ticket to modify it for PDF export
+            const ticketClone = ticketElement.cloneNode(true);
+            
+            // Remove the download button from the clone
+            const downloadBtn = ticketClone.querySelector('.btn-download');
+            if (downloadBtn) {
+                downloadBtn.style.display = 'none';
+            }
+            
+            // Set the clone's styling for PDF
+            ticketClone.style.position = 'absolute';
+            ticketClone.style.left = '-9999px';
+            ticketClone.style.width = '350px'; // Fixed width for PDF
+            
+            // Append to body temporarily
+            document.body.appendChild(ticketClone);
+            
+            // Generate PDF options
+            const options = {
+                margin: 0,
+                filename: 'parking-ticket-' + bookingId + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Generate PDF
+            html2pdf().from(ticketClone).set(options).save().then(() => {
+                // Remove the clone after PDF generation
+                document.body.removeChild(ticketClone);
+            });
+        }
+    </script>
+</body>
+</html>

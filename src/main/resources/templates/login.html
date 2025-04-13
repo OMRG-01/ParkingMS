@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Member Login</title>
+</head>
+<body>
+    <form th:action="@{/login}" method="post">
+        <h2>Member Login</h2>
+        
+        <div>
+            <label>Email</label>
+            <input type="email" name="email" placeholder="Enter your email" required>
+        </div>
+        
+        <div>
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter your password" required>
+        </div>
+        
+        <div>
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe">Remember me</label>
+            <a href="#" id="forgotPasswordLink">Forgot password?</a>
+        </div>
+        
+        <div>
+            <button type="submit">Login</button>
+        </div>
+        
+        <div>
+            <span>OR</span>
+        </div>
+        
+        <div>
+            <button type="button">Google</button>
+            <button type="button">Facebook</button>
+            <button type="button">Twitter</button>
+        </div>
+        
+        <div>
+            Don't have an account? <a th:href="@{/register1}">Sign up now</a>
+        </div>
+    </form>
+</body>
+</html>
