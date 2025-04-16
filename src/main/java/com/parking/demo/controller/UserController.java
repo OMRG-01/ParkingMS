@@ -33,7 +33,8 @@ public class UserController {
     
 
     private static final int OTP_LENGTH = 6;
-
+    
+    
     // Endpoint to send OTP to user email
     @PostMapping("/send-otp")
     @ResponseBody

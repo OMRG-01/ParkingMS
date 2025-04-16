@@ -1,5 +1,6 @@
 package com.parking.demo.repository;
 
+import com.parking.demo.model.Role;
 import com.parking.demo.model.User;
 
 import java.time.LocalDateTime;
@@ -21,5 +22,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     
     long count();
+    
+    List<User> findByRole_Id(int roleId); // ✅ correct!
+
 
 }

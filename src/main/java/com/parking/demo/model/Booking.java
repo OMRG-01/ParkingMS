@@ -31,7 +31,11 @@ public class Booking {
 
     @Column(name = "slot", nullable = false)
     private String slot; // e.g., B1 or C2
+    
+    @Column(name = "amount")
+    private double amount;
 
+    
     @Column(name = "payment_status")
     private int paymentStatus;  // 0 = not paid, 1 = paid
 
@@ -42,7 +46,7 @@ public class Booking {
     public void setPaymentStatus(int paymentStatus) {
         this.paymentStatus = paymentStatus;
     }
-
+    
     // Default Constructor
     public Booking() {
     }
@@ -58,6 +62,14 @@ public class Booking {
     }
 
     // Getters
+    public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+
     public Long getId() {
         return id;
     }

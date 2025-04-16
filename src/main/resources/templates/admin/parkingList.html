@@ -2,80 +2,923 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Parking Areas List</title>
-    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <link th:href="@{/sidnav.css}" rel="stylesheet">
     <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        :root {
+            --primary: #2c3e50;
+            --primary-light: #34495e;
+            --secondary: #3498db;
+            --secondary-light: #5dade2;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #1a1a1a;
+            --light: #f8f9fa;
+            --gray: #95a5a6;
+            --gray-light: #ecf0f1;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f4f7fa;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 999;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        .sidebar-header .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .sidebar-header i {
+            font-size: 24px;
+        }
+
+        .admin-info {
+            padding: 0 25px;
+            margin-bottom: 30px;
+        }
+
+        .admin-info .avatar {
+            width: 64px;
+            height: 64px;
+            background-color: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .admin-info .name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .admin-info .role {
+            color: var(--gray-light);
+            font-size: 14px;
+            margin-top: 3px;
+        }
+
+        .nav-menu {
+            list-style: none;
             margin-top: 20px;
         }
+
+        .nav-item {
+            margin-bottom: 5px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            color: #ddd;
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            gap: 12px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--primary-light);
+            color: white;
+            border-left-color: var(--secondary);
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            width: 1500px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--gray-light);
+            padding-bottom: 15px;
+            width: 100%;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-title i {
+            color: var(--secondary);
+        }
+
+        /* Table Container */
+        .table-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        
+        .table-container:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 10px;
+            background-color: white;
+        }
+
         th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
+            padding: 14px 15px;
             text-align: left;
         }
+
         th {
-            background-color: #f2f2f2;
+            background-color: var(--primary);
+            color: white;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
         }
+        
+        th:first-child {
+            border-top-left-radius: 8px;
+        }
+        
+        th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: var(--transition);
+        }
+        
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        td {
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        /* Status Indicators */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .status-car {
+            background-color: rgba(52, 152, 219, 0.15);
+            color: var(--secondary);
+        }
+        
+        .status-bike {
+            background-color: rgba(243, 156, 18, 0.15);
+            color: var(--warning);
+        }
+        
+        .status-both {
+            background-color: rgba(46, 204, 113, 0.15);
+            color: var(--success);
+        }
+
+        /* Button Styles */
         .btn {
             padding: 10px 20px;
-            background-color: #4CAF50;
+            background-color: var(--secondary);
             border: none;
             color: white;
             font-size: 16px;
-            border-radius: 5px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-add {
+            background-color: var(--secondary);
+            padding: 12px 24px;
+            font-weight: 500;
+        }
+
+        .btn-warning {
+            background-color: var(--warning);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+
+        .action-cell {
+            white-space: nowrap;
+        }
+
+        .action-cell a {
+            margin-right: 8px;
             text-decoration: none;
         }
-        .btn:hover {
-            background-color: #45a049;
+
+        /* Search and Filter Section */
+        .filter-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px 12px 40px;
+            border: 2px solid var(--gray-light);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        
+        .search-box input:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+        
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid var(--gray-light);
+            border-radius: 8px;
+            background-color: white;
+            font-size: 16px;
+            min-width: 150px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        
+        .filter-select:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            gap: 5px;
+        }
+        
+        .pagination-item {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background-color: white;
+            border: 1px solid var(--gray-light);
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--dark);
+            text-decoration: none;
+        }
+        
+        .pagination-item:hover, .pagination-item.active {
+            background-color: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+        
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 24px;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: var(--gray);
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Modal Dialog */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal.show {
+            display: block;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 400px;
+            max-width: 90%;
+            transform: translateY(-50px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: var(--danger);
+            gap: 10px;
+        }
+        
+        .modal-header i {
+            font-size: 24px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            margin-bottom: 25px;
+            color: var(--dark);
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .btn-cancel {
+            background-color: var(--gray-light);
+            color: var(--dark);
+        }
+        
+        .btn-confirm {
+            background-color: var(--danger);
+        }
+
+        /* Alert messages */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.15);
+            border-left: 4px solid var(--success);
+            color: #27ae60;
+        }
+        
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.15);
+            border-left: 4px solid var(--danger);
+            color: #c0392b;
+        }
+        
+        .alert i {
+            font-size: 18px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            th, td {
+                padding: 12px 10px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                width: 100%;
+                position: static;
+                height: auto;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .filter-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btn-add {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-parking"></i>
+                <div class="logo">ParkEasy Admin</div>
+            </div>
+            
+            <div class="admin-info">
+                <div class="avatar" th:text="${#strings.substring(session.loggedInUser.name,0,1)}">A</div>
+                <div class="name" th:text="${session.loggedInUser.name}">Admin User</div>
+                <div class="role">System Administrator</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a th:href="@{/admin/dashboard}" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/parking/add}" class="nav-link">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Add Parking</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/parking/all}" class="nav-link active">
+                        <i class="fa-solid fa-list"></i>
+                        <span>Parking List</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/rates}" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Manage Rates</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/user/book/todayBookings}" class="nav-link">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Bookings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/users}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/reports}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/settings}" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/logout}" class="nav-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
 
-<h2>Parking Areas List</h2>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-list"></i>
+                    Parking Areas List
+                </h1>
+				<div>
+                <a th:href="@{/admin/parking/add}" class="btn btn-add">
+                    <i class="fas fa-plus-circle"></i> Add Parking Area
+                </a>
+				<a th:href="@{/admin/dashboard}" class="btn btn-add">
+							    <i class="fas fa-tachometer-alt"></i>
+							    Dashboard
+							</a>
+							</div>
+            </div>
 
-<a th:href="@{/admin/parking/add}" class="btn">Add Parking Area</a>
+            <!-- Success Message (if available) -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <span th:text="${successMessage}"></span>
+            </div>
 
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Location</th>
-            <th>City</th>
-            <th>Capacity</th>
-            <th>Type</th>
-            <th>Car Slots</th>
-            <th>Bike Slots</th>
-            <th>Owner Name</th>
-			<th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr th:each="parkingArea : ${parkingAreas}">
-            <td th:text="${parkingArea.id}"></td>
-            <td th:text="${parkingArea.name}"></td>
-            <td th:text="${parkingArea.location}"></td>
-            <td th:text="${parkingArea.city}"></td>
-            <td th:text="${parkingArea.capacity}"></td>
-            <td th:text="${parkingArea.type}"></td>
-            <td th:text="${parkingArea.carSlots != null ? parkingArea.carSlots : '-'}"></td>
-            <td th:text="${parkingArea.bikeSlots != null ? parkingArea.bikeSlots : '-'}"></td>
-            <td th:text="${parkingArea.ownerName}"></td>
-			<td>
-			                    <a th:href="@{'/admin/parking/update/' + ${parkingArea.id}}">Update</a> |
-			                    <a href="javascript:void(0)" th:onclick="'confirmDelete(' + ${parkingArea.id} + ')'">Delete</a>
-			                </td>
-        </tr>
-    </tbody>
-</table>
-<script>
-       function confirmDelete(id) {
-           if (confirm("Are you sure you want to delete this parking area?")) {
-               window.location.href = "/admin/parking/delete/" + id;
-           }
-       }
-   </script>
+            <!-- Error Message (if available) -->
+            <div th:if="${errorMessage}" class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="filter-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search parking areas...">
+                </div>
+                <select class="filter-select" id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="Car">Car</option>
+                    <option value="Bike">Bike</option>
+                    <option value="Both">Both</option>
+                </select>
+                <select class="filter-select" id="cityFilter">
+                    <option value="">All Cities</option>
+                    <!-- City options would be dynamically populated -->
+                </select>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table id="parkingTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>City</th>
+                            <th>Capacity</th>
+                            <th>Type</th>
+                            <th>Car Slots</th>
+                            <th>Bike Slots</th>
+                            <th>Owner Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="parkingArea : ${parkingAreas}" th:data-type="${parkingArea.type}" th:data-city="${parkingArea.city}">
+                            <td th:text="${parkingArea.id}"></td>
+                            <td th:text="${parkingArea.name}"></td>
+                            <td th:text="${parkingArea.location}"></td>
+                            <td th:text="${parkingArea.city}"></td>
+                            <td th:text="${parkingArea.capacity}"></td>
+                            <td>
+                                <span th:if="${parkingArea.type == 'Car'}" class="status-badge status-car">Car</span>
+                                <span th:if="${parkingArea.type == 'Bike'}" class="status-badge status-bike">Bike</span>
+                                <span th:if="${parkingArea.type == 'Both'}" class="status-badge status-both">Both</span>
+                            </td>
+                            <td th:text="${parkingArea.carSlots != null ? parkingArea.carSlots : '-'}"></td>
+                            <td th:text="${parkingArea.bikeSlots != null ? parkingArea.bikeSlots : '-'}"></td>
+                            <td th:text="${parkingArea.ownerName}"></td>
+                            <td class="action-cell">
+                                <a th:href="@{'/admin/parking/update/' + ${parkingArea.id}}" class="btn btn-warning tooltip">
+                                    <i class="fas fa-edit"></i> Edit
+                                    <span class="tooltip-text">Edit this parking area</span>
+                                </a>
+                                <a href="javascript:void(0)" th:onclick="'showDeleteModal(' + ${parkingArea.id} + ')'" class="btn btn-danger tooltip">
+                                    <i class="fas fa-trash"></i> Delete
+                                    <span class="tooltip-text">Delete this parking area</span>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- Empty state message (shown when no results are found) -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <i class="fas fa-parking"></i>
+                    <h3>No Parking Areas Found</h3>
+                    <p>There are no parking areas matching your search or filter criteria.</p>
+                    <a th:href="@{/admin/parking/add}" class="btn">
+                        <i class="fas fa-plus-circle"></i> Add Parking Area
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Pagination (Optional) -->
+            <div class="pagination">
+                <a href="#" class="pagination-item">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <a href="#" class="pagination-item active">1</a>
+                <a href="#" class="pagination-item">2</a>
+                <a href="#" class="pagination-item">3</a>
+                <a href="#" class="pagination-item">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3 class="modal-title">Confirm Deletion</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this parking area? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDelete" class="btn btn-cancel">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button id="confirmDelete" class="btn btn-confirm">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Delete modal functionality
+        const modal = document.getElementById('deleteModal');
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const cancelDeleteBtn = document.getElementById('cancelDelete');
+        let parkingIdToDelete = null;
+        
+        function showDeleteModal(id) {
+            parkingIdToDelete = id;
+            modal.classList.add('show');
+        }
+        
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (parkingIdToDelete) {
+                window.location.href = "/admin/parking/delete/" + parkingIdToDelete;
+            }
+        });
+        
+        cancelDeleteBtn.addEventListener('click', function() {
+            modal.classList.remove('show');
+        });
+        
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+        
+        // Search and filtering functionality
+        const searchInput = document.getElementById('searchInput');
+        const typeFilter = document.getElementById('typeFilter');
+        const cityFilter = document.getElementById('cityFilter');
+        const parkingTable = document.getElementById('parkingTable');
+        const emptyState = document.getElementById('emptyState');
+        
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const typeValue = typeFilter.value;
+            const cityValue = cityFilter.value;
+            
+            const rows = parkingTable.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const type = row.getAttribute('data-type');
+                const city = row.getAttribute('data-city');
+                
+                const textContent = row.textContent.toLowerCase();
+                const matchesSearch = searchTerm === '' || textContent.includes(searchTerm);
+                const matchesType = typeValue === '' || type === typeValue;
+                const matchesCity = cityValue === '' || city === cityValue;
+                
+                if (matchesSearch && matchesType && matchesCity) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show/hide empty state message
+            if (visibleCount === 0) {
+                parkingTable.style.display = 'none';
+                emptyState.style.display = 'flex';
+            } else {
+                parkingTable.style.display = '';
+                emptyState.style.display = 'none';
+            }
+        }
+        
+        searchInput.addEventListener('input', filterTable);
+        typeFilter.addEventListener('change', filterTable);
+        cityFilter.addEventListener('change', filterTable);
+        
+        // Populate city filter based on available data
+        function populateCityFilter() {
+            const cities = new Set();
+            const rows = parkingTable.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const city = row.getAttribute('data-city');
+                if (city) cities.add(city);
+            });
+            
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                cityFilter.appendChild(option);
+            });
+        }
+        
+        window.addEventListener('load', populateCityFilter);
+    </script>
 </body>
 </html>

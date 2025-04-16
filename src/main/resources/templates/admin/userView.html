@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>User View</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <link th:href="@{/sidnav.css}" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --primary-light: #34495e;
+            --secondary: #3498db;
+            --secondary-light: #5dade2;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #1a1a1a;
+            --light: #f8f9fa;
+            --gray: #95a5a6;
+            --gray-light: #ecf0f1;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f4f7fa;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar styles kept as is */
+        .sidebar {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 999;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        .sidebar-header .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .sidebar-header i {
+            font-size: 24px;
+        }
+
+        .admin-info {
+            padding: 0 25px;
+            margin-bottom: 30px;
+        }
+
+        .admin-info .avatar {
+            width: 64px;
+            height: 64px;
+            background-color: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .admin-info .name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .admin-info .role {
+            color: var(--gray-light);
+            font-size: 14px;
+            margin-top: 3px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .nav-item {
+            margin-bottom: 5px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            color: #ddd;
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            gap: 12px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--primary-light);
+            color: white;
+            border-left-color: var(--secondary);
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            width: 1500px;
+        }
+
+        /* Page Header & Content Styling */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .page-header h2 {
+            color: var(--primary);
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .users-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* Enhanced Table Styling */
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+        }
+
+        .users-table thead {
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        .users-table th {
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .users-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--gray-light);
+            font-size: 15px;
+        }
+
+        .users-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .users-table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        /* Button Styling */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-light);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        /* Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-container {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .modal-header h5 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-close:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-body {
+            padding: 25px;
+            overflow-y: auto;
+            max-height: calc(85vh - 70px);
+        }
+
+        /* Booking Table in Modal */
+        .booking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .booking-table thead {
+            background-color: var(--gray-light);
+        }
+
+        .booking-table th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .booking-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--gray-light);
+            font-size: 14px;
+        }
+
+        .booking-table tbody tr:nth-child(even) {
+            background-color: rgba(236, 240, 241, 0.3);
+        }
+
+        .booking-table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        /* Payment summary styling */
+        .payment-summary {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--gray-light);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .payment-summary p {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .payment-summary .paid {
+            color: var(--success);
+        }
+
+        .payment-summary .unpaid {
+            color: var(--warning);
+        }
+
+        /* Badge styling */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: rgba(46, 204, 113, 0.15);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background-color: rgba(243, 156, 18, 0.15);
+            color: var(--warning);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .booking-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .payment-summary {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar - Kept as is -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-parking"></i>
+                <div class="logo">ParkEasy Admin</div>
+            </div>
+            
+            <div class="admin-info">
+                <div class="avatar" th:text="${#strings.substring(session.loggedInUser.name,0,1)}">A</div>
+                <div class="name" th:text="${session.loggedInUser.name}">Admin User</div>
+                <div class="role">System Administrator</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a th:href="@{/admin/dashboard}" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/parking/add}" class="nav-link">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Add Parking</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/parking/all}" class="nav-link ">
+                        <i class="fa-solid fa-list"></i>
+                        <span>Parking List</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/rates}" class="nav-link">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Manage Rates</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/user/book/todayBookings}" class="nav-link ">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Bookings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/users}" class="nav-link active">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/reports}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/settings}" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/logout}" class="nav-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main content area -->
+        <div class="main-content">
+            <div class="page-header">
+                <h2><i class="fas fa-users"></i> User Management</h2>
+            </div>
+
+            <div class="users-card">
+                <h3>Registered Users</h3>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Mobile</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${users}">
+                            <td th:text="${user.name}">Name</td>
+                            <td th:text="${user.email}">Email</td>
+                            <td th:text="${user.mobileNumber}">Mobile</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm"
+                                        th:attr="data-userid=${user.id}"
+                                        onclick="showBookings(this)">
+                                    <i class="fas fa-calendar-check"></i> View Bookings
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h5><i class="fas fa-calendar-check"></i> User Bookings</h5>
+                <button type="button" class="btn-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="booking-table">
+                    <thead>
+                        <tr>
+                            <th>Parking Area</th>
+                            <th>Slot</th>
+                            <th>Vehicle</th>
+                            <th>Time</th>
+                            <th>Until</th>
+                            <th>Amount</th>
+                            <th>Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingTableBody"></tbody>
+                </table>
+                
+                <div class="payment-summary">
+                    <p><strong>Total Paid:</strong> <span class="paid">₹<span id="totalPaid">0</span></span></p>
+                    <p><strong>Total Unpaid:</strong> <span class="unpaid">₹<span id="totalUnpaid">0</span></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function showBookings(button) {
+        const userId = button.getAttribute('data-userid');
+
+        fetch(`/admin/booking/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('bookingTableBody');
+                tbody.innerHTML = '';
+
+                data.bookings.forEach(booking => {
+                    const row = document.createElement('tr');
+                    
+                    // Format dates for better readability
+                    const bookingTime = formatDateTime(booking.bookingTime);
+                    const bookedUntil = formatDateTime(booking.bookedUntil);
+                    
+                    // Payment status badge
+                    const paymentStatus = booking.paymentStatus === 1 ? 
+                        '<span class="badge badge-success">Paid</span>' : 
+                        '<span class="badge badge-warning">Not Paid</span>';
+                    
+                    row.innerHTML = `
+                        <td>${booking.parkingArea.name}</td>
+                        <td>${booking.slot}</td>
+                        <td>${booking.vehicle.numberPlate}</td>
+                        <td>${bookingTime}</td>
+                        <td>${bookedUntil}</td>
+                        <td>₹${booking.amount}</td>
+                        <td>${paymentStatus}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById('totalPaid').textContent = data.totalPaid;
+                document.getElementById('totalUnpaid').textContent = data.totalUnpaid;
+
+                // Show modal
+                document.getElementById('bookingModal').classList.add('active');
+            })
+            .catch(error => {
+                console.error('Error fetching booking data:', error);
+            });
+    }
+
+    function closeModal() {
+        document.getElementById('bookingModal').classList.remove('active');
+    }
+
+    // Format datetime strings (replace 'T' with space and format nicely)
+    function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return 'N/A';
+        
+        // Replace 'T' with space and handle formatting
+        const formattedStr = dateTimeStr.replace('T', ' ');
+        
+        // You can add more formatting here if needed
+        return formattedStr;
+    }
+
+    // Close modal when clicking outside of it
+    document.getElementById('bookingModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeModal();
+        }
+    });
+    </script>
+</body>
+</html>

@@ -27,7 +27,12 @@ public class BookingService {
     @Autowired
     private VehicleRepository vehicleRepository;
 
-    public Booking createBooking(Long userId, Long parkingAreaId, Long vehicleId, int hours, String selectedSlot) {
+    public List<Booking> getTodayBookings() {
+        return bookingRepository.findTodayBookings();
+    }
+
+    
+    public Booking createBooking(Long userId, Long parkingAreaId, Long vehicleId, int hours, String selectedSlot, double amount) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -39,8 +44,10 @@ public class BookingService {
 
         LocalDateTime bookingTime = LocalDateTime.now();
         LocalDateTime bookedUntil = bookingTime.plusHours(hours);
-
+        
+        
         Booking booking = new Booking();
+        booking.setAmount(amount);
         booking.setUser(user);
         booking.setParkingArea(parkingArea);
         booking.setVehicle(vehicle);

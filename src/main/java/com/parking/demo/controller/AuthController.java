@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 public class AuthController {
@@ -46,6 +48,9 @@ public class AuthController {
     @Autowired
     private BookingService bookingService;
     
+    @Autowired
+    private BookingRepository bookingRepository;
+    
     @GetMapping("/")
     public String home() {
         return "index"; // Redirects to index.html in 'static'
@@ -54,6 +59,33 @@ public class AuthController {
     public String showLoginPage() {
         return "login"; // This remains the same
     }
+    @GetMapping("/admin/dash")
+    public ModelAndView checkAdminLogin(HttpSession session) {
+        Object user = session.getAttribute("loggedInUser"); // Adjust this key to your project
+
+        if (user != null) {
+            // User is logged in
+            return new ModelAndView("admin/adminDash"); // Goes to admin/adminDash.html
+        } else {
+            // User not logged in, redirect to login controller
+            return new ModelAndView("redirect:/login1");
+        }
+    }
+    
+    @GetMapping("/admin/api/today-revenue")
+    @ResponseBody
+    public double getTodayRevenueAjax() {
+        List<Booking> paidBookings = bookingRepository.findByPaymentStatus(1);
+        LocalDate today = LocalDate.now();
+
+        double totalTodayRevenue = paidBookings.stream()
+            .filter(booking -> booking.getBookingTime().toLocalDate().isEqual(today))
+            .mapToDouble(Booking::getAmount)
+            .sum();
+
+        return totalTodayRevenue;
+    }
+
 
     @PostMapping("/login")
     public String login(@RequestParam String email, 

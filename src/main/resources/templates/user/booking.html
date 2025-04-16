@@ -438,6 +438,8 @@
                 <input type="hidden" id="selectedVehicleType" />
                 <input type="hidden" id="hiddenUserId" th:value="${userId}" />
                 <input type="hidden" name="selectedSlot" id="selectedSlot">
+				<input type="hidden" name="amount" id="hiddenAmount">
+
                 
                 <div class="form-group">
                     <label for="cityDropdown"><i class="fas fa-city"></i> Select City</label>
@@ -638,6 +640,7 @@
                 if (hours && rate) {
                     const totalAmount = hours * rate;
                     $('#totalAmount').text(`Total: ₹${totalAmount}`);
+					$('#hiddenAmount').val(totalAmount); // <-- set the hidden input here
                 }
             });
             

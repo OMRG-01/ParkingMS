@@ -1,5 +1,6 @@
 package com.parking.demo.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,10 +145,11 @@ public class BookingController {
             @RequestParam Long vehicleId,
             @RequestParam Long parkingId,
             @RequestParam int hours,
-            @RequestParam String selectedSlot
+            @RequestParam String selectedSlot,
+            @RequestParam double amount
             
     ) {
-        Booking booking = bookingService.createBooking(userId, parkingId, vehicleId, hours, selectedSlot);
+        Booking booking = bookingService.createBooking(userId, parkingId, vehicleId, hours, selectedSlot, amount);
         
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Slot booked successfully!");
@@ -186,7 +188,22 @@ public class BookingController {
         return "user/userBooking"; // Correct the template path to the userBooking.html
     }
 
+    @GetMapping("/todayBookings")
+    public String showTodayBookings(Model model, HttpSession session) {
+        User admin = (User) session.getAttribute("loggedInUser");
 
+        if (admin == null || !"ADMIN".equals(admin.getRole().getRoleName())) {
+            return "redirect:/login1";
+        }
+
+        List<Booking> bookings = bookingService.getTodayBookings();
+        model.addAttribute("bookings", bookings);
+        model.addAttribute("now", LocalDateTime.now());
+
+        return "admin/todayBookings";
+    }
+    
+    
 
 
 

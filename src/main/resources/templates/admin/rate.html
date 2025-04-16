@@ -2,118 +2,405 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Manage Parking Rates</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <link th:href="@{/sidnav.css}" rel="stylesheet">
     <style>
+        :root {
+			--primary: #2c3e50;
+			           --primary-light: #34495e;
+			           --secondary: #3498db;
+			           --secondary-light: #5dade2;
+			           --success: #2ecc71;
+			           --warning: #f39c12;
+			           --danger: #e74c3c;
+			           --dark: #1a1a1a;
+			           --light: #f8f9fa;
+			           --gray: #95a5a6;
+			           --gray-light: #ecf0f1;
+            --light-gray: #f4f7fa;
+            --dark: #333;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-gray);
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+			max-width: 100px;;
+        }
+
+        .main-content {
+			margin-top: 5px;
+            margin-left: 250px;
+            padding: 30px;
+            width: 1500px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e6ed;
+        }
+
+        .page-header h2 {
+            color: var(--primary);
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .rates-card {
+            background-color: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
         table {
-            width: 80%;
+            width: 100%;
             border-collapse: collapse;
-            margin: 20px auto;
+            margin: 15px 0;
+            background-color: #fff;
+            border-radius: var(--border-radius);
+            overflow: hidden;
         }
 
         th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
         }
 
         th {
-            background-color: #f2f2f2;
+            background-color: var(--primary-light);
+            color: var(--light);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: #f9fafc;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         input[type="number"] {
-            width: 80px;
+            width: 120px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: var(--transition);
         }
 
-        button {
-            padding: 5px 10px;
+        input[type="number"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+            outline: none;
         }
 
-        .success {
-            color: green;
+        .rate-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #f8f9fa;
+            color: var(--dark);
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e9ecef;
+        }
+
+        .success-alert {
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 15px;
+            border-radius: var(--border-radius);
             text-align: center;
-            font-weight: bold;
+            font-weight: 500;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .city-badge {
+            background-color: var(--secondary);
+            color: var(--light);
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .type-car {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .type-bike {
+            background-color: #f0fdf4;
+            color: #166534;
+        }
+        
+        .type-both {
+            background-color: #fef3c7;
+            color: #92400e;
         }
     </style>
 </head>
 <body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-parking"></i>
+                <div class="logo">ParkEasy Admin</div>
+            </div>
+            
+            <div class="admin-info">
+                <div class="avatar" th:text="${#strings.substring(session.loggedInUser.name,0,1)}">A</div>
+                <div class="name" th:text="${session.loggedInUser.name}">Admin User</div>
+                <div class="role">System Administrator</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a th:href="@{/admin/dashboard}" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/parking/all}" class="nav-link">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Add Parking </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/parking/all}" class="nav-link">
+                        <i class="fa-solid fa-list"></i>
+                        <span>Parking List</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/rates}" class="nav-link active">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Manage Rates</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/user/book/todayBookings}" class="nav-link">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Bookings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/users}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Users</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/reports}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/settings}" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/logout}" class="nav-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        
+        <div class="main-content">
+            <div class="page-header">
+                <h2><i class="fas fa-dollar-sign"></i> Manage Parking Rates</h2>
+            </div>
+            
+            <div class="rates-card">
+                <form id="rateForm">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Parking Name</th>
+                                <th>City</th>
+                                <th>Type</th>
+                                <th>Rates (per hour)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="area : ${parkingAreas}">
+                                <td th:text="${area.name}"></td>
+                                <td>
+                                    <span class="city-badge" th:text="${area.city}"></span>
+                                </td>
+                                <td>
+                                    <span th:class="${'type-badge ' + (area.type.equalsIgnoreCase('Car') ? 'type-car' : (area.type.equalsIgnoreCase('Bike') ? 'type-bike' : 'type-both'))}" 
+                                          th:text="${area.type}"></span>
+                                </td>
+                                <td>
+                                    <input type="hidden" name="parkingAreaId" th:value="${area.id}" />
+                                    
+                                    <div class="input-group" th:if="${area.type.equalsIgnoreCase('Car') or area.type.equalsIgnoreCase('Both')}">
+                                        <div>
+                                            <div class="rate-label">Car Rate ($)</div>
+                                            <input type="number" step="0.01"
+                                                class="carRate"
+                                                placeholder="0.00"
+                                                th:value="${area.parkingRate?.carRate}" />
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="input-group" th:if="${area.type.equalsIgnoreCase('Bike') or area.type.equalsIgnoreCase('Both')}">
+                                        <div>
+                                            <div class="rate-label">Bike Rate ($)</div>
+                                            <input type="number" step="0.01"
+                                                class="bikeRate"
+                                                placeholder="0.00"
+                                                th:value="${area.parkingRate?.bikeRate}" />
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-<h2 style="text-align: center;">Set Parking Rates</h2>
+                    <div class="btn-container">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save All Rates
+                        </button>
+                        <a th:href="@{/admin/dashboard}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
 
-<form id="rateForm">
-    <table>
-        <thead>
-        <tr>
-            <th>Parking Name</th>
-            <th>City</th>
-            <th>Type</th>
-            <th>Rates (per hour)</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="area : ${parkingAreas}">
-            <td th:text="${area.name}"></td>
-            <td th:text="${area.city}"></td>
-            <td th:text="${area.type}"></td>
-
-            <td>
-                <input type="hidden" name="parkingAreaId" th:value="${area.id}" />
-
-                <input type="number" step="0.01"
-                       th:if="${area.type.equalsIgnoreCase('Car') or area.type.equalsIgnoreCase('Both')}"
-                       class="carRate"
-                       placeholder="Car Rate"
-                       th:value="${area.parkingRate?.carRate}" />
-
-                <input type="number" step="0.01"
-                       th:if="${area.type.equalsIgnoreCase('Bike') or area.type.equalsIgnoreCase('Both')}"
-                       class="bikeRate"
-                       placeholder="Bike Rate"
-                       th:value="${area.parkingRate?.bikeRate}" />
-            </td>
-        </tr>
-        </tbody>
-    </table>
-
-    <div style="text-align: center;">
-        <button type="submit">Save All Rates</button>
+                    <div class="success-alert" id="successMsg">
+                        <i class="fas fa-check-circle"></i> Rates saved successfully!
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <p class="success" id="successMsg" style="display:none;">Rates saved successfully!</p>
-</form>
+    <script>
+        document.getElementById("rateForm").addEventListener("submit", function(e) {
+            e.preventDefault();
 
-<script>
-    document.getElementById("rateForm").addEventListener("submit", function(e) {
-        e.preventDefault();
+            const rows = document.querySelectorAll("tbody tr");
+            const payload = [];
 
-        const rows = document.querySelectorAll("tbody tr");
-        const payload = [];
+            rows.forEach(row => {
+                const areaId = row.querySelector('input[name="parkingAreaId"]').value;
+                const carRateInput = row.querySelector('.carRate');
+                const bikeRateInput = row.querySelector('.bikeRate');
 
-        rows.forEach(row => {
-            const areaId = row.querySelector('input[name="parkingAreaId"]').value;
-            const carRateInput = row.querySelector('.carRate');
-            const bikeRateInput = row.querySelector('.bikeRate');
+                payload.push({
+                    parkingAreaId: areaId,
+                    carRate: carRateInput ? parseFloat(carRateInput.value || 0) : null,
+                    bikeRate: bikeRateInput ? parseFloat(bikeRateInput.value || 0) : null
+                });
+            });
 
-            payload.push({
-                parkingAreaId: areaId,
-                carRate: carRateInput ? parseFloat(carRateInput.value || 0) : null,
-                bikeRate: bikeRateInput ? parseFloat(bikeRateInput.value || 0) : null
+            fetch("/admin/rates/save/ajax", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }).then(response => {
+                if (response.ok) {
+                    const successMsg = document.getElementById("successMsg");
+                    successMsg.style.display = "block";
+                    
+                    // Auto-hide the message after 3 seconds
+                    setTimeout(() => {
+                        successMsg.style.display = "none";
+                    }, 3000);
+                } else {
+                    alert("Error saving rates.");
+                }
             });
         });
-
-        fetch("/admin/rates/save/ajax", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        }).then(response => {
-            if (response.ok) {
-                document.getElementById("successMsg").style.display = "block";
-            } else {
-                alert("Error saving rates.");
-            }
-        });
-    });
-</script>
-
+    </script>
 </body>
 </html>

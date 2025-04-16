@@ -33,17 +33,20 @@ public class ParkingAreaController {
     @PostMapping("/add")
     public String addParkingArea(@ModelAttribute ParkingArea parkingArea, BindingResult result, Model model) {
         if (result.hasErrors()) {
-            return "admin/parking"; // Return to form in case of error
+            return "admin/parking"; // Form validation errors
         }
 
         try {
             parkingAreaService.addParkingArea(parkingArea);
-            return "redirect:/admin/dashboard"; // Redirect to dashboard after successful add
+            model.addAttribute("successMessage", "Parking Area added successfully!");
+            model.addAttribute("parkingArea", new ParkingArea()); // Reset form
+            return "admin/parking"; // Stay on same page
         } catch (IllegalArgumentException e) {
             model.addAttribute("errorMessage", e.getMessage());
-            return "admin/parking"; // Show error message and return to form
+            return "admin/parking";
         }
     }
+
 
     // View all parking areas (admin dashboard)
     @GetMapping("/all")

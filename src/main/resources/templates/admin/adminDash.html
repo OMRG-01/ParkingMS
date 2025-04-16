@@ -7,6 +7,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <link th:href="@{/sidnav.css}" rel="stylesheet">
   <style>
     :root {
       --primary: #2c3e50;
@@ -44,102 +45,12 @@
       min-height: 100vh;
     }
     
-    /* Sidebar */
-    .sidebar {
-      background-color: var(--primary);
-      color: white;
-      padding: 20px 0;
-      position: fixed;
-      width: 250px;
-      height: 100vh;
-      overflow-y: auto;
-      z-index: 999;
-      transition: var(--transition);
-    }
-    
-    .sidebar-header {
-      padding: 15px 25px;
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      margin-bottom: 30px;
-      gap: 10px;
-    }
-    
-    .sidebar-header .logo {
-      font-size: 22px;
-      font-weight: bold;
-    }
-    
-    .sidebar-header i {
-      font-size: 24px;
-    }
-    
-    .admin-info {
-      padding: 0 25px;
-      margin-bottom: 30px;
-    }
-    
-    .admin-info .avatar {
-      width: 64px;
-      height: 64px;
-      background-color: var(--secondary);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
-    
-    .admin-info .name {
-      font-size: 18px;
-      font-weight: 600;
-    }
-    
-    .admin-info .role {
-      color: var(--gray-light);
-      font-size: 14px;
-      margin-top: 3px;
-    }
-    
-    .nav-menu {
-      list-style: none;
-      margin-top: 20px;
-    }
-    
-    .nav-item {
-      margin-bottom: 5px;
-    }
-    
-    .nav-link {
-      display: flex;
-      align-items: center;
-      padding: 12px 25px;
-      color: #ddd;
-      text-decoration: none;
-      transition: var(--transition);
-      border-left: 3px solid transparent;
-      gap: 12px;
-    }
-    
-    .nav-link:hover, .nav-link.active {
-      background-color: var(--primary-light);
-      color: white;
-      border-left-color: var(--secondary);
-    }
-    
-    .nav-link i {
-      width: 20px;
-      text-align: center;
-    }
     
     /* Main Content */
     .main-content {
       grid-column: 2;
       padding: 25px;
-      margin-left: 250px;
+      margin-left: 0px;
       transition: var(--transition);
     }
     
@@ -511,11 +422,17 @@
           </a>
         </li>
         <li class="nav-item">
-          <a th:href="@{/admin/parking/all}" class="nav-link">
+          <a th:href="@{/admin/parking/add}" class="nav-link">
             <i class="fas fa-map-marker-alt"></i>
-            <span>Parking Areas</span>
+            <span>Add Parking </span>
           </a>
         </li>
+		<li class="nav-item">
+		          <a th:href="@{/admin/parking/all}" class="nav-link">
+		           <i class="fa-solid fa-list"></i>
+		            <span>Parking List</span>
+		          </a>
+		        </li>
         <li class="nav-item">
           <a th:href="@{/admin/rates}" class="nav-link">
             <i class="fas fa-dollar-sign"></i>
@@ -523,7 +440,7 @@
           </a>
         </li>
         <li class="nav-item">
-          <a th:href="@{/admin/bookings}" class="nav-link">
+          <a th:href="@{/user/book/todayBookings}" class="nav-link">
             <i class="fas fa-calendar-check"></i>
             <span>Bookings</span>
           </a>
@@ -595,14 +512,14 @@
           </div>
         </div>
         
-        <div class="stat-card">
-          <i class="fas fa-dollar-sign icon"></i>
-          <div class="stat-label">Total Revenue</div>
-          <div class="stat-value">₹42,580</div>
-          <div class="stat-change">
-            <i class="fas fa-arrow-up"></i> 15% this month
-          </div>
-        </div>
+		<div class="stat-card">
+		  <i class="fas fa-dollar-sign icon"></i>
+		  <div class="stat-label">Total Revenue</div>
+		  <div class="stat-value">₹<span id="todayRevenue">Loading...</span></div>
+		  <div class="stat-change">
+		    <i class="fas fa-arrow-up"></i> Today
+		  </div>
+		</div>
       </div>
       
       <!-- Action Cards -->
@@ -668,7 +585,17 @@
   <div class="flash-container" id="flashContainer"></div>
   
   <script>
-    
+	document.addEventListener("DOMContentLoaded", function () {
+	    fetch("/admin/api/today-revenue")
+	      .then(response => response.json())
+	      .then(data => {
+	        document.getElementById("todayRevenue").textContent = data.toFixed(2);
+	      })
+	      .catch(error => {
+	        console.error("Error fetching today’s revenue:", error);
+	        document.getElementById("todayRevenue").textContent = "Error";
+	      });
+	  });
     // Function to fetch notifications
     function fetchNotifications() {
       // In production, use this to fetch real data:

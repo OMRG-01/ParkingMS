@@ -2,81 +2,527 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Add Parking Area</title>
-    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
-        .form-container {
-            margin: 30px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        :root {
+            --primary: #2c3e50;
+            --primary-light: #34495e;
+            --secondary: #3498db;
+            --secondary-light: #5dade2;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #1a1a1a;
+            --light: #f8f9fa;
+            --gray: #95a5a6;
+            --gray-light: #ecf0f1;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
         }
-        .form-container input, .form-container select {
-            padding: 8px;
-            margin: 5px;
-            width: 200px;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .btn {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            border: none;
+        
+        body {
+            background-color: #f4f7fa;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--primary);
             color: white;
+            padding: 20px 0;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 999;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        .sidebar-header .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .sidebar-header i {
+            font-size: 24px;
+        }
+
+        .admin-info {
+            padding: 0 25px;
+            margin-bottom: 30px;
+        }
+
+        .admin-info .avatar {
+            width: 64px;
+            height: 64px;
+            background-color: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .admin-info .name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .admin-info .role {
+            color: var(--gray-light);
+            font-size: 14px;
+            margin-top: 3px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .nav-item {
+            margin-bottom: 5px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            color: #ddd;
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            gap: 12px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--primary-light);
+            color: white;
+            border-left-color: var(--secondary);
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            width: 1500px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--gray-light);
+            padding-bottom: 15px;
+            width: 100%;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: auto;
+        }
+
+        .page-title i {
+            color: var(--secondary);
+        }
+
+        /* Form Container */
+        .form-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 1200px;
+            transition: var(--transition);
+        }
+
+        .form-container:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .form-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary-light);
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px 20px;
+        }
+
+        .form-group {
+            flex: 1 0 calc(50% - 30px);
+            margin: 0 15px 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--primary);
+            font-size: 15px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--gray-light);
+            border-radius: 8px;
             font-size: 16px;
-            border-radius: 5px;
+            transition: var(--transition);
+            background-color: #fff;
         }
+
+        .form-control:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: var(--gray);
+            opacity: 0.7;
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .slots-section {
+            background-color: rgba(52, 152, 219, 0.05);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(52, 152, 219, 0.2);
+        }
+
+        .slots-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slots-title i {
+            color: var(--secondary);
+        }
+
+        .btn {
+            padding: 14px 28px;
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+        }
+
         .btn:hover {
-            background-color: #45a049;
+            background-color: var(--secondary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.3);
         }
-        .error {
-            color: red;
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .alert {
+            margin-bottom: 25px;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.15);
+            border-left: 4px solid var(--success);
+            color: #27ae60;
+        }
+
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.15);
+            border-left: 4px solid var(--danger);
+            color: #c0392b;
+        }
+
+        .alert i {
+            font-size: 20px;
+        }
+
+        /* Form Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-container {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .form-group {
+                flex: 1 0 calc(100% - 30px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                width: 100%;
+                position: static;
+                height: auto;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
-<h2>Add Parking Area</h2>
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-parking"></i>
+            <div class="logo">ParkEasy Admin</div>
+        </div>
+        
+        <div class="admin-info">
+            <div class="avatar" th:text="${#strings.substring(session.loggedInUser.name,0,1)}">A</div>
+            <div class="name" th:text="${session.loggedInUser.name}">Admin User</div>
+            <div class="role">System Administrator</div>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a th:href="@{/admin/dashboard}" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/admin/parking/add}" class="nav-link active">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Add Parking</span>
+                </a>
+            </li>
+			<li class="nav-item">
+					          <a th:href="@{/admin/parking/all}" class="nav-link">
+					           <i class="fa-solid fa-list"></i>
+					            <span>Parking List</span>
+					          </a>
+					        </li>
+            <li class="nav-item">
+                <a th:href="@{/admin/rates}" class="nav-link">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Manage Rates</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/user/book/todayBookings}" class="nav-link">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Bookings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/admin/users}" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/admin/reports}" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/admin/settings}" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/logout}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
 
-<form th:action="@{/admin/parking/add}" th:object="${parkingArea}" method="post" class="form-container">
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-plus-circle"></i>
+                Add Parking Area
+            </h1>
+        </div>
 
-    <div th:if="${errorMessage != null}" class="error">
-        <p th:text="${errorMessage}"></p>
+        <!-- Success Message -->
+        <div th:if="${successMessage}" class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}"></span>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <form th:action="@{/admin/parking/add}" th:object="${parkingArea}" method="post" class="form-container">
+            <h3 class="form-section-title">
+                <i class="fas fa-info-circle"></i> Basic Information
+            </h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Parking Name</label>
+                    <input type="text" id="name" th:field="*{name}" class="form-control" required placeholder="Enter parking area name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" th:field="*{location}" class="form-control" required placeholder="Enter location address">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" th:field="*{city}" class="form-control" required placeholder="Enter city name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="capacity">Total Capacity</label>
+                    <input type="number" id="capacity" th:field="*{capacity}" class="form-control" required placeholder="Enter total parking capacity">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="type">Parking Type</label>
+                    <select id="type" th:field="*{type}" class="form-control" required>
+                        <option value="" disabled selected>Select parking type</option>
+                        <option value="Car">Car</option>
+                        <option value="Bike">Bike</option>
+                        <option value="Both">Both</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ownerName">Owner Name</label>
+                    <input type="text" id="ownerName" th:field="*{ownerName}" class="form-control" required placeholder="Enter owner name">
+                </div>
+            </div>
+
+            <div class="slots-section">
+                <h3 class="slots-title">
+                    <i class="fas fa-th"></i> Slot Distribution
+                </h3>
+                <div class="form-row">
+                    <div class="form-group" id="carSlotsSection">
+                        <label for="carSlots">Car Slots</label>
+                        <input type="number" id="carSlots" th:field="*{carSlots}" class="form-control" placeholder="Enter number of car slots">
+                    </div>
+                    
+                    <div class="form-group" id="bikeSlotsSection">
+                        <label for="bikeSlots">Bike Slots</label>
+                        <input type="number" id="bikeSlots" th:field="*{bikeSlots}" class="form-control" placeholder="Enter number of bike slots">
+                    </div>
+                </div>
+            </div>
+
+			<!-- Submit Button -->
+			<button type="submit" class="btn">
+			    <i class="fas fa-save"></i>
+			    Add Parking Area
+			</button>
+
+			<!-- Dashboard Navigation Button -->
+			<a th:href="@{/admin/dashboard}" class="btn">
+			    <i class="fas fa-tachometer-alt"></i>
+			    Dashboard
+			</a>
+        </form>
     </div>
-
-    <label for="name">Parking Name:</label>
-    <input type="text" id="name" th:field="*{name}" required><br>
-
-    <label for="location">Location:</label>
-    <input type="text" id="location" th:field="*{location}" required><br>
-
-    <label for="city">City:</label>
-    <input type="text" id="city" th:field="*{city}" required><br>
-
-    <label for="capacity">Capacity:</label>
-    <input type="number" id="capacity" th:field="*{capacity}" required><br>
-
-    <label for="type">Parking Type:</label>
-    <select id="type" th:field="*{type}" required>
-        <option value="Car">Car</option>
-        <option value="Bike">Bike</option>
-        <option value="Both">Both</option>
-    </select><br>
-
-    <div id="carSlotsSection">
-        <label for="carSlots">Car Slots:</label>
-        <input type="number" id="carSlots" th:field="*{carSlots}"><br>
-    </div>
-
-    <div id="bikeSlotsSection">
-        <label for="bikeSlots">Bike Slots:</label>
-        <input type="number" id="bikeSlots" th:field="*{bikeSlots}"><br>
-    </div>
-
-    <label for="ownerName">Owner Name:</label>
-    <input type="text" id="ownerName" th:field="*{ownerName}" required><br>
-	
-
-
-    <button type="submit" class="btn">Add Parking Area</button>
-</form>
+</div>
 
 <script>
     // Dynamically show car/bike slots based on selected type
@@ -84,7 +530,7 @@
     const carSlotsSection = document.getElementById('carSlotsSection');
     const bikeSlotsSection = document.getElementById('bikeSlotsSection');
 
-    typeSelect.addEventListener('change', function () {
+    typeSelect.addEventListener('change', function() {
         const type = typeSelect.value;
         if (type === 'Both') {
             carSlotsSection.style.display = 'block';
@@ -92,9 +538,11 @@
         } else if (type === 'Car') {
             carSlotsSection.style.display = 'block';
             bikeSlotsSection.style.display = 'none';
+            document.getElementById('bikeSlots').value = 0;
         } else if (type === 'Bike') {
             carSlotsSection.style.display = 'none';
             bikeSlotsSection.style.display = 'block';
+            document.getElementById('carSlots').value = 0;
         }
     });
 

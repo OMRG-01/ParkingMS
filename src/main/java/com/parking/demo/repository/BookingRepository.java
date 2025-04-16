@@ -25,4 +25,28 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
 	 long countByBookedUntilAfter(LocalDateTime currentDateTime);
 
+	 @Query("SELECT b FROM Booking b WHERE DATE(b.bookingTime) = CURRENT_DATE")
+	 List<Booking> findTodayBookings();
+	 
+	 List<Booking> findByPaymentStatus(int paymentStatus);
+	 
+	 @Query("SELECT b FROM Booking b " +
+		       "WHERE (:fromDate IS NULL OR b.bookingTime >= :fromDate) " +
+		       "AND (:toDate IS NULL OR b.bookingTime <= :toDate) " +
+		       "AND (:paymentStatus IS NULL OR b.paymentStatus = :paymentStatus) " +
+		       "AND (:userEmail IS NULL OR LOWER(b.user.email) LIKE LOWER(CONCAT('%', :userEmail, '%'))) " +
+		       "ORDER BY b.bookingTime DESC")
+		List<Booking> findFilteredBookings(
+		    @Param("fromDate") LocalDateTime fromDate,
+		    @Param("toDate") LocalDateTime toDate,
+		    @Param("paymentStatus") Integer paymentStatus,
+		    @Param("userEmail") String userEmail
+		);
+
+	 List<Booking> findAllByOrderByBookingTimeDesc();
+
+	 
+	 @Query("SELECT b FROM Booking b ORDER BY b.bookingTime DESC")
+	 List<Booking> findAllBookings();
+
 }
