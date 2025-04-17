@@ -1,47 +1,767 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Member Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkEase - Login</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+  <style>
+    :root {
+      --primary: #3498db;
+      --primary-dark: #2980b9;
+      --secondary: #2ecc71;
+      --dark: #34495e;
+      --light: #f5f7fa;
+      --danger: #e74c3c;
+      --text: #2c3e50;
+      --shadow: rgba(0, 0, 0, 0.1);
+      --gradient-start: #74b9ff;
+      --gradient-end: #0984e3;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* Background animation elements */
+    .bg-animation {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+    }
+    
+    .car-icon {
+      position: absolute;
+      opacity: 0.07;
+      transform: rotate(0deg);
+    }
+    
+    .parking-line {
+      position: absolute;
+      height: 8px;
+      background-color: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    
+    /* Login container */
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 40px;
+      background-color: white;
+      border-radius: 16px;
+      box-shadow: 0 15px 35px var(--shadow);
+      z-index: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Glow effect behind the form */
+    .login-container::before {
+      content: "";
+      position: absolute;
+      top: -20px;
+      left: -20px;
+      width: 140%;
+      height: 140%;
+      background: radial-gradient(
+        circle at center,
+        rgba(52, 152, 219, 0.2) 0%,
+        rgba(255, 255, 255, 0) 70%
+      );
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    
+    .login-container:hover::before {
+      opacity: 1;
+    }
+    
+    /* Brand section */
+    .brand {
+      text-align: center;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    
+    .brand h1 {
+      color: var(--primary);
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .brand h1::after {
+      content: "";
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      width: 0;
+      height: 3px;
+      background-color: var(--secondary);
+      transform: translateX(-50%);
+      transition: width 0.6s ease;
+    }
+    
+    .login-container:hover .brand h1::after {
+      width: 80%;
+    }
+    
+    .brand p {
+      color: var(--dark);
+      font-size: 16px;
+      opacity: 0.8;
+    }
+    
+    /* Parking icon */
+    .parking-icon {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .parking-icon svg {
+      width: 70px;
+      height: 70px;
+      fill: var(--primary);
+      filter: drop-shadow(0 4px 6px rgba(52, 152, 219, 0.3));
+      transition: transform 0.5s ease;
+    }
+    
+    .login-container:hover .parking-icon svg {
+      transform: scale(1.1);
+    }
+    
+    /* Form styling */
+    .input-group {
+      margin-bottom: 24px;
+      position: relative;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--dark);
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #e0e6ed;
+      border-radius: 10px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      background-color: #f8fafc;
+    }
+    
+    .input-group.focus label {
+      color: var(--primary);
+    }
+    
+    .input-group input:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+      background-color: white;
+    }
+    
+    /* Input icons */
+    .input-icon {
+      position: absolute;
+      top: 40px;
+      right: 16px;
+      color: #a0aec0;
+      transition: all 0.3s ease;
+    }
+    
+    .input-group.focus .input-icon {
+      color: var(--primary);
+    }
+    
+    /* Remember me and forgot password */
+    .remember-forgot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
+    
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .custom-checkbox {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      border: 2px solid #cbd5e0;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+    
+    .checkbox-wrapper input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+    
+    .checkbox-wrapper input:checked ~ .custom-checkbox {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .custom-checkbox::after {
+      content: "";
+      position: absolute;
+      display: none;
+      left: 5px;
+      top: 1px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    
+    .checkbox-wrapper input:checked ~ .custom-checkbox::after {
+      display: block;
+    }
+    
+    .forgot-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .forgot-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 1px;
+      bottom: -2px;
+      left: 0;
+      background-color: var(--primary);
+      transition: width 0.3s ease;
+    }
+    
+    .forgot-link:hover::after {
+      width: 100%;
+    }
+    
+    .forgot-link:hover {
+      color: var(--primary-dark);
+    }
+    
+    /* Button styling */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+    
+    .btn:hover::before {
+      width: 400px;
+      height: 400px;
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 7px 14px rgba(52, 152, 219, 0.4);
+    }
+    
+    .btn:active {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(52, 152, 219, 0.4);
+    }
+    
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 28px 0;
+      color: #a0aec0;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .divider span {
+      margin: 0 10px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    /* Google login button */
+    .google-btn {
+      width: 100%;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: var(--text);
+    }
+    
+    .google-btn:hover {
+      background-color: #f8fafc;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .google-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .google-icon {
+      margin-right: 10px;
+      height: 20px;
+    }
+    
+    /* Sign up link */
+    .signup-link {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 24px;
+    }
+    
+    .signup-link a {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .signup-link a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -3px;
+      left: 0;
+      background-color: var(--primary);
+      transition: width 0.3s ease;
+    }
+    
+    .signup-link a:hover::after {
+      width: 100%;
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+        margin: 20px;
+        width: auto;
+      }
+    }
+
+    /* Loading animation when submitting form */
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: rotate 1s linear infinite;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .btn.loading .loading-spinner {
+      display: inline-block;
+    }
+
+    /* Success feedback animation */
+    .success-checkmark {
+      display: none;
+      width: 20px;
+      height: 20px;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .success-checkmark .check-icon {
+      width: 20px;
+      height: 20px;
+      position: relative;
+      border-radius: 50%;
+      box-sizing: content-box;
+      border: 2px solid white;
+    }
+
+    .success-checkmark .check-icon::before {
+      top: 9px;
+      left: 5px;
+      width: 3px;
+      height: 2px;
+      border-radius: 2px;
+      transform: rotate(45deg);
+    }
+
+    .success-checkmark .check-icon::after {
+      top: 8px;
+      left: 7px;
+      width: 7px;
+      height: 2px;
+      border-radius: 2px;
+      transform: rotate(135deg);
+    }
+
+    .success-checkmark .check-icon::before,
+    .success-checkmark .check-icon::after {
+      content: '';
+      height: 100%;
+      background-color: white;
+      position: absolute;
+    }
+
+    .btn.success .success-checkmark {
+      display: block;
+    }
+  </style>
 </head>
 <body>
-    <h2>Member Login</h2>
+  <!-- Background animation elements -->
+  <div class="bg-animation" id="bg-animation"></div>
 
-    <form th:action="@{/login}" method="post">
-        <div>
-            <label>Email</label>
-            <input type="email" name="email" placeholder="Enter your email" required>
+  <div class="login-container">
+    <div class="parking-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4C7.58,4 4,7.58 4,12C4,16.42 7.58,20 12,20C16.42,20 20,16.42 20,12C20,7.58 16.42,4 12,4M9,7H15V17H13V13H11V17H9V7M11,9V11H13V9H11Z" />
+      </svg>
+    </div>
+    
+    <div class="brand">
+      <h1>ParkEase</h1>
+      <p>Smart Parking Management System</p>
+    </div>
+    
+    <form th:action="@{/login}" method="post" id="loginForm">
+      <div class="input-group" id="emailGroup">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+        <div class="input-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
         </div>
-
-        <div>
-            <label>Password</label>
-            <input type="password" name="password" placeholder="Enter your password" required>
+      </div>
+      
+      <div class="input-group" id="passwordGroup">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        <div class="input-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
         </div>
-
-        <div>
-            <input type="checkbox" id="rememberMe">
-            <label for="rememberMe">Remember me</label>
-            <a href="#" id="forgotPasswordLink">Forgot password?</a>
+      </div>
+      
+      <div class="remember-forgot">
+        <label class="checkbox-wrapper">
+          <input type="checkbox" id="rememberMe" name="rememberMe">
+          <span class="custom-checkbox"></span>
+          Remember me
+        </label>
+        <a href="#" class="forgot-link" id="forgotPasswordLink">Forgot password?</a>
+      </div>
+      
+      <button type="submit" class="btn" id="loginBtn">
+        <span>Login</span>
+        <div class="loading-spinner"></div>
+        <div class="success-checkmark">
+          <div class="check-icon"></div>
         </div>
-
-        <div>
-            <button type="submit">Login</button>
-        </div>
+      </button>
     </form>
-
-    <div>
-        <span>OR</span>
+    
+    <div class="divider">
+      <span>OR</span>
     </div>
-
-    <div>
-        <!-- ✅ Google login button that works independently -->
-        <a href="/oauth2/authorization/google">
-            <button type="button">Continue with Google</button>
-        </a>
+    
+    <a href="/oauth2/authorization/google" class="google-btn">
+      <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+      </svg>
+      Continue with Google
+    </a>
+    
+    <div class="signup-link">
+      Don't have an account? <a th:href="@{/register1}">Sign up now</a>
     </div>
+  </div>
 
-    <div>
-        Don't have an account? <a th:href="@{/register1}">Sign up now</a>
-    </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create animated background elements
+      const bgAnimation = document.getElementById('bg-animation');
+      
+      // Create parking lines
+      for (let i = 0; i < 15; i++) {
+        const line = document.createElement('div');
+        line.className = 'parking-line';
+        line.style.width = `${Math.random() * 150 + 50}px`;
+        line.style.left = `${Math.random() * 100}%`;
+        line.style.top = `${Math.random() * 100}%`;
+        line.style.transform = `rotate(${Math.random() * 360}deg)`;
+        bgAnimation.appendChild(line);
+      }
+      
+      // Create car icons
+      for (let i =.0; i < 8; i++) {
+        const car = document.createElement('div');
+        car.className = 'car-icon';
+        car.style.width = `${Math.random() * 60 + 40}px`;
+        car.style.height = `${Math.random() * 60 + 40}px`;
+        car.style.left = `${Math.random() * 100}%`;
+        car.style.top = `${Math.random() * 100}%`;
+        car.style.transform = `rotate(${Math.random() * 360}deg)`;
+        
+        // Add car SVG
+        car.innerHTML = `
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="white" d="M5,11L6.5,6.5H17.5L19,11M17.5,16A1.5,1.5 0 0,1 16,14.5A1.5,1.5 0 0,1 17.5,13A1.5,1.5 0 0,1 19,14.5A1.5,1.5 0 0,1 17.5,16M6.5,16A1.5,1.5 0 0,1 5,14.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 8,14.5A1.5,1.5 0 0,1 6.5,16M18.92,6C18.72,5.42 18.16,5 17.5,5H6.5C5.84,5 5.28,5.42 5.08,6L3,12V20A1,1 0 0,0 4,21H5A1,1 0 0,0 6,20V19H18V20A1,1 0 0,0 19,21H20A1,1 0 0,0 21,20V12L18.92,6Z" />
+          </svg>
+        `;
+        
+        bgAnimation.appendChild(car);
+        
+        // Animate the car
+        gsap.to(car, {
+          x: Math.random() * 300 - 150,
+          y: Math.random() * 300 - 150,
+          rotation: Math.random() * 360,
+          duration: Math.random() * 20 + 15,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut"
+        });
+      }
+      
+      // Add animations for form appearance
+      gsap.from(".login-container", {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out"
+      });
+      
+      gsap.from(".parking-icon", {
+        scale: 0.5,
+        opacity: 0,
+        duration: 0.8,
+        delay: 0.3,
+        ease: "back.out(1.7)"
+      });
+      
+      gsap.from(".brand", {
+        y: -20,
+        opacity: 0,
+        duration: 0.6,
+        delay: 0.5,
+        ease: "power2.out"
+      });
+      
+      gsap.from(".input-group", {
+        y: 20,
+        opacity: 0,
+        stagger: 0.2,
+        duration: 0.6,
+        delay: 0.7,
+        ease: "power2.out"
+      });
+      
+      gsap.from(".remember-forgot, .btn, .divider, .google-btn, .signup-link", {
+        y: 20,
+        opacity: 0,
+        stagger: 0.15,
+        duration: 0.6,
+        delay: 1.1,
+        ease: "power2.out"
+      });
+      
+      // Add input focus effects
+      const inputGroups = document.querySelectorAll(".input-group");
+      inputGroups.forEach(group => {
+        const input = group.querySelector("input");
+        
+        input.addEventListener("focus", () => {
+          group.classList.add("focus");
+          gsap.to(input, {
+            boxShadow: "0 0 0 4px rgba(52, 152, 219, 0.15)",
+            borderColor: "#3498db",
+            backgroundColor: "white",
+            duration: 0.3
+          });
+        });
+        
+        input.addEventListener("blur", () => {
+          group.classList.remove("focus");
+          gsap.to(input, {
+            boxShadow: "none",
+            borderColor: "#e0e6ed",
+            backgroundColor: "#f8fafc",
+            duration: 0.3
+          });
+          
+          // Validate input
+          if (input.value) {
+            gsap.to(input, {
+              borderColor: "#2ecc71",
+              duration: 0.3
+            });
+          }
+        });
+      });
+      
+      // Form submission animation
+      const loginForm = document.getElementById('loginForm');
+      const loginBtn = document.getElementById('loginBtn');
+      
+      loginForm.addEventListener('submit', function(e) {
+        // Uncomment the next line for demo purposes to see the animation
+        // e.preventDefault();
+        
+        loginBtn.classList.add('loading');
+        
+        // For demo purposes (this would normally be handled by server response)
+        setTimeout(() => {
+          loginBtn.classList.remove('loading');
+          loginBtn.classList.add('success');
+        }, 1500);
+      });
+      
+      // Password show/hide toggle functionality
+      const passwordGroup = document.getElementById('passwordGroup');
+      const passwordIcon = passwordGroup.querySelector('.input-icon');
+      const passwordInput = document.getElementById('password');
+      
+      passwordIcon.addEventListener('click', function() {
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          passwordIcon.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          `;
+        } else {
+          passwordInput.type = 'password';
+          passwordIcon.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          `;
+        }
+      });
+      
+      // Add hover effects to the button
+      loginBtn.addEventListener('mouseenter', function() {
+        gsap.to(this, {
+          scale: 1.03,
+          backgroundColor: "#2980b9",
+          duration: 0.3
+        });
+      });
+      
+      loginBtn.addEventListener('mouseleave', function() {
+        gsap.to(this, {
+          scale: 1,
+          backgroundColor: "#3498db",
+          duration: 0.3
+        });
+      });
+      
+      // Forgot password link effect
+      const forgotLink = document.getElementById('forgotPasswordLink');
+      forgotLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Show a modal or create a password reset flow here
+        alert('Password reset functionality will be implemented here.');
+      });
+    });
+  </script>
 </body>
 </html>
