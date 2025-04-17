@@ -88,9 +88,9 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public String login(@RequestParam String email, 
-                        @RequestParam String password, 
-                        HttpServletRequest request, 
+    public String login(@RequestParam String email,
+                        @RequestParam String password,
+                        HttpServletRequest request,
                         Model model,
                         HttpServletResponse response) {
 
@@ -101,6 +101,7 @@ public class AuthController {
         }
 
         try {
+            // Check if user exists with the given email and password
             User user = userRepository.findByEmailAndPassword(email, password);
 
             if (user != null) {
@@ -108,22 +109,26 @@ public class AuthController {
                 session.setAttribute("loggedInUser", user);
                 session.setAttribute("userId", user.getId());
                 session.setAttribute("userRole", user.getRole().getRoleName());
-                session.setMaxInactiveInterval(30 * 60);
+                session.setMaxInactiveInterval(30 * 60);  // Session timeout
 
+                // Set headers to prevent caching
                 response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
                 response.setHeader("Pragma", "no-cache");
                 response.setHeader("X-Content-Type-Options", "nosniff");
 
-                return user.getRole().getRoleName().equalsIgnoreCase("ADMIN") ?
-                    "redirect:/admin/dashboard" : "redirect:/user/dashboard";
+                // Redirect to appropriate dashboard based on user role
+                if (user.getRole().getRoleName().equalsIgnoreCase("ADMIN")) {
+                    return "redirect:/admin/dashboard";
+                } else {
+                    return "redirect:/user/dashboard";
+                }
             } else {
-                Thread.sleep(1000); // Delay to prevent brute force
                 model.addAttribute("error", "Invalid email or password");
-                return "login"; // Stay on login page with error message
+                return "login";  // Stay on login page with error message
             }
         } catch (Exception e) {
             model.addAttribute("error", "An error occurred. Please try again.");
-            return "login";
+            return "login";  // Stay on login page with error message
         }
     }
 

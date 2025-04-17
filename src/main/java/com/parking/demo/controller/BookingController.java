@@ -12,8 +12,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.parking.demo.model.*;
 import com.parking.demo.repository.BookingRepository;
+import com.parking.demo.repository.ParkingAreaRepository;
 import com.parking.demo.service.*;
 
 import jakarta.servlet.http.HttpSession;
@@ -39,6 +42,9 @@ public class BookingController {
     
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private ParkingAreaRepository parkingAreaRepository;
 
     
     @PostMapping("/update-payment-status")
@@ -69,7 +75,8 @@ public class BookingController {
     
     // Show booking form
     @GetMapping
-    public String showBookingForm(Model model, HttpSession session) {
+    public String showBookingForm(@RequestParam(value = "location", required = false) String location,
+                                  Model model, HttpSession session) {
         User user = (User) session.getAttribute("loggedInUser");
         if (user == null) return "redirect:/login1";
 
@@ -80,11 +87,53 @@ public class BookingController {
         // Fetch user's vehicles
         List<Vehicle> vehicles = vehicleService.getVehiclesByUser(user.getId());
         model.addAttribute("vehicles", vehicles);
-        
+
         model.addAttribute("userId", user.getId());
 
-        return "user/booking"; // booking.html inside /templates/user
+
+        //
+
+        return "user/booking"; // booking.html
     }
+
+    @GetMapping("/map-booking")
+    public String showBookingFromMap(@RequestParam(value = "location", required = false) String location,
+                                     Model model, HttpSession session) {
+        User user = (User) session.getAttribute("loggedInUser");
+        if (user == null) return "redirect:/login1"; // redirect to login if the user is not logged in
+
+        // Fetch distinct cities from ParkingArea table
+        List<String> cities = parkingAreaService.getDistinctCities();
+        model.addAttribute("cities", cities);
+
+        // Fetch user's vehicles
+        List<Vehicle> vehicles = vehicleService.getVehiclesByUser(user.getId());
+        model.addAttribute("vehicles", vehicles);
+
+        model.addAttribute("userId", user.getId());
+
+        // Fetch all parking areas (so frontend can match location)
+        List<ParkingArea> parkingAreas = parkingAreaService.getAllParkingAreas();
+        model.addAttribute("parkingAreas", parkingAreas);
+
+        // Convert parkingAreas to JSON (for JavaScript matching)
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String parkingAreasJson = objectMapper.writeValueAsString(parkingAreas);
+            model.addAttribute("parkingAreasJson", parkingAreasJson);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            model.addAttribute("parkingAreasJson", "[]"); // fallback
+        }
+
+        // If location is provided in the URL, pass it to the view to preselect
+        if (location != null && !location.isEmpty()) {
+            model.addAttribute("preselectedLocation", location);
+        }
+
+        return "user/booking"; // return the same booking.html
+    }
+
 
     // AJAX: Fetch parking areas by selected city
     @ResponseBody

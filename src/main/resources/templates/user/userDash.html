@@ -240,6 +240,36 @@
         grid-template-columns: 1fr;
       }
     }
+	.nav-menu {
+	      list-style: none;
+	      margin-top: 20px;
+	    }
+	    
+	    .nav-item {
+	      margin-bottom: 5px;
+	    }
+	    
+	    .nav-link {
+	      display: flex;
+	      align-items: center;
+	      padding: 12px 25px;
+	      color: #ddd;
+	      text-decoration: none;
+	      transition: var(--transition);
+	      border-left: 3px solid transparent;
+	      gap: 12px;
+	    }
+	    
+	    .nav-link:hover, .nav-link.active {
+	      background-color: var(--primary-light);
+	      color: white;
+	      border-left-color: var(--secondary);
+	    }
+	    
+	    .nav-link i {
+	      width: 20px;
+	      text-align: center;
+	    }
   </style>
 </head>
 <body>
@@ -251,8 +281,10 @@
           <i class="fas fa-parking"></i> ParkEasy
         </div>
         <div class="user-info">
+			
           <div class="user-name" th:text="${session.loggedInUser.name}">User</div>
           <div class="avatar" th:text="${#strings.substring(session.loggedInUser.name,0,1)}">U</div>
+		  
         </div>
       </div>
     </div>
@@ -274,6 +306,9 @@
           <a th:href="@{/user/book/bookings}" class="btn">
             <i class="fas fa-history"></i> Booking History
           </a>
+		<a th:href="@{/logout}" class="btn">
+		              <i class="fas fa-sign-out-alt"></i>Log Out
+		            </a>
         </div>
       </section>
 
@@ -347,7 +382,7 @@
                   <div style="text-align: center;">
                     <strong style="font-size: 16px; color: #3498db;">Parking Area</strong>
                     <p style="margin: 8px 0;">${loc.location}</p>
-                    <a href="/user/book?location=${encodeURIComponent(loc.location)}" 
+                    <a href="/user/book/map-booking?location=${encodeURIComponent(loc.location)}" 
                        style="display: inline-block; background: #2ecc71; color: white; padding: 5px 10px; 
                               border-radius: 3px; text-decoration: none; margin-top: 5px;">
                       Book Now

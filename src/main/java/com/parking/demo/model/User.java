@@ -32,7 +32,11 @@ public class User {
 
     @Column(nullable = false)
     private String gender;
+    
+    @Column(name = "active")
+    private boolean active; // ✅ Add this field
 
+    
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
@@ -68,6 +72,25 @@ public class User {
         this.city = city;
         this.gender = gender;
         this.role = role;
+    }
+    
+    public User(String email, String name) {
+        this.email = email;
+        this.name = name;
+        this.mobileNumber = "N/A"; // or a default value
+        this.password = "GOOGLE_USER"; // or generate a dummy value
+        this.city = "N/A";
+        this.gender = "Other";
+        this.role = new Role(2L, "USER"); // make sure this matches your DB
+    }
+    
+    // ✅ Getter and Setter for 'active'
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Long getId() {

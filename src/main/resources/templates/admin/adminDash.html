@@ -79,7 +79,10 @@
       gap: 25px;
       margin-bottom: 30px;
     }
-    
+    .dashboard-grid a{
+		text-decoration: none;
+		color:#1a1a1a;
+	}
     .stat-card {
       background-color: white;
       border-radius: 8px;
@@ -485,6 +488,7 @@
       
       <!-- Stats Overview -->
       <div class="dashboard-grid">
+		<a th:href="@{/admin/parking/all}">
         <div class="stat-card">
           <i class="fas fa-car icon"></i>
           <div class="stat-label">Total Parking Areas</div>
@@ -493,7 +497,9 @@
             <i class="fas fa-arrow-up"></i> 3 new this month
           </div>
         </div>
-        
+		</a>
+		
+		<a th:href="@{/user/book/todayBookings}">
         <div class="stat-card">
           <i class="fas fa-calendar-check icon"></i>
           <div class="stat-label">Active Bookings</div>
@@ -502,7 +508,9 @@
             <i class="fas fa-arrow-up"></i> 12% increase
           </div>
         </div>
-        
+		</a>
+		
+		<a th:href="@{/admin/users}">
         <div class="stat-card">
           <i class="fas fa-users icon"></i>
           <div class="stat-label">Registered Users</div>
@@ -511,7 +519,8 @@
             <i class="fas fa-arrow-up"></i> 7% this week
           </div>
         </div>
-        
+		</a>
+		
 		<div class="stat-card">
 		  <i class="fas fa-dollar-sign icon"></i>
 		  <div class="stat-label">Total Revenue</div>

@@ -10,6 +10,7 @@
     <style>
 		:root {
 		            --primary: #3498db;
+			--primary-dark: #2980b9;
 		            --secondary: #2ecc71;
 		            --dark: #2c3e50;
 		            --light: #ecf0f1;
@@ -401,6 +402,30 @@
 		            text-align: center;
 		            display: none;
 		        }
+				.center-div {
+				margin-top: 10px;
+				  display: flex;
+				  justify-content: center;
+				  align-items: center; /* Optional */
+				  height: 100px; /* Optional: for vertical centering */
+				}
+
+				.back-btn {
+				  display: inline-flex;
+				  align-items: center;
+				  padding: 8px 15px;
+				  background-color: var(--primary);
+				  color: var(--light);
+				  border-radius: var(--border-radius);
+				  text-decoration: none;
+				  font-size: 15px;
+				  transition: all 0.2s ease;
+				}
+
+				.back-btn:hover {
+				  background-color: var(--primary-dark);
+				}
+
     </style>
 </head>
 <body>
@@ -409,7 +434,11 @@
             <h1><i class="fas fa-car"></i> Vehicle Parking System</h1>
             <p>Book your parking slot in just a few steps</p>
         </div>
-        
+		<div class="center-div">
+			<a th:href="@{/user/dashboard}" class="back-btn">
+			          <i class="fas fa-arrow-left"></i> Back to Dashboard
+			        </a>
+		</div>
         <div class="steps">
             <div class="step active">
                 <div class="step-icon">
@@ -430,7 +459,8 @@
                 <div class="step-label">Payment</div>
             </div>
         </div>
-        
+		<p>Preselected Location: <span th:text="${preselectedLocation}"></span></p>
+
         <div class="booking-form">
             <form method="post" th:action="@{/user/book/submit}">
                 <input type="hidden" name="userId" th:value="${userId}">
@@ -538,8 +568,60 @@
     
     <input type="hidden" id="hiddenBookingId" value="${bookingId}">
     
+
     <!-- AJAX Script -->
-    <script>
+    <script>	
+		
+		   console.log('Preselected Location:', preselectedLocation);
+				   console.log('Preselected Location:', preselectedLocation);
+
+		function getQueryParam(param) {
+			const urlParams = new URLSearchParams(window.location.search);
+			return urlParams.get(param);
+		}
+
+		document.addEventListener("DOMContentLoaded", function () {
+			const passedLocation = getQueryParam("location");
+
+			if (passedLocation && parkingAreas.length > 0) {
+				const decodedLocation = decodeURIComponent(passedLocation);
+				console.log("Decoded URL location:", decodedLocation);
+				console.log("Parking Areas JSON:", parkingAreas);
+
+				const matched = parkingAreas.find(area => area.location === decodedLocation);
+
+				if (matched) {
+					const cityDropdown = document.getElementById("cityDropdown");
+					const parkingDropdown = document.getElementById("parkingDropdown");
+
+					// Step 1: Select the city
+					Array.from(cityDropdown.options).forEach(opt => {
+						if (opt.value.trim().toLowerCase() === matched.city.trim().toLowerCase()) {
+							opt.selected = true;
+						}
+					});
+
+					// Step 2: Load parking areas dynamically
+					$('#parkingDropdown').empty().append('<option value="">Loading...</option>');
+					$.get("/user/book/parking-by-city", { city: matched.city }, function (data) {
+						$('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
+						data.forEach(function (parking) {
+							$('#parkingDropdown').append('<option value="' + parking.id + '">' + parking.name + '</option>');
+						});
+
+						// Step 3: Preselect parking
+						const matchedOption = Array.from(parkingDropdown.options).find(
+							opt => opt.text.trim() === matched.name.trim() || opt.value == matched.id
+						);
+						if (matchedOption) {
+							matchedOption.selected = true;
+						}
+					});
+				}
+			}
+		});
+
+
         $(document).ready(function() {
             // Update steps based on progress
             function updateSteps(activeStep) {
