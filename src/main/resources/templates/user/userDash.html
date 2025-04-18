@@ -503,36 +503,43 @@
         }
         
         locations.forEach(loc => {
-          const encodedLocation = encodeURIComponent(loc.location);
-          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedLocation}`;
+        	  const encodedLocation = encodeURIComponent(loc.location);
+        	  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedLocation}`;
 
-          fetch(url, {
-            headers: {
-              "User-Agent": "ParkingLocator/1.0 (omgawali2003@gmail.com)"
-            }
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data && data.length > 0) {
-              const lat = data[0].lat;
-              const lon = data[0].lon;
+        	  console.log('Looking up:', loc.location); // Debug log
+        	  console.log('Looking up:', loc.city);
+        	  console.log('Looking up:', loc.name);
+        	  fetch(url, {
+        	    headers: {
+        	      "User-Agent": "ParkingLocator/1.0 (tileharshad@gmail.com)"
+        	    }
+        	  })
+        	  .then(response => response.json())
+        	  .then(data => {
+        	    if (data && data.length > 0) {
+        	      const lat = data[0].lat;
+        	      const lon = data[0].lon;
 
-              const marker = L.marker([lat, lon]).addTo(map)
-                .bindPopup(`
-                  <div style="text-align: center;">
-                    <strong style="font-size: 16px; color: #3498db;">Parking Area</strong>
-                    <p style="margin: 8px 0;">${loc.location}</p>
-                    <a href="/user/book/map-booking?location=${encodeURIComponent(loc.location)}" 
-                       style="display: inline-block; background: #2ecc71; color: white; padding: 5px 10px; 
-                              border-radius: 3px; text-decoration: none; margin-top: 5px;">
-                      Book Now
-                    </a>
-                  </div>
-                `);
-            }
-          })
-          .catch(err => console.error("Geocoding error:", err));
-        });
+        	      const marker = L.marker([lat, lon]).addTo(map)
+        	        .bindPopup(`
+        	          <div style="text-align: center;">
+        	            <strong style="font-size: 16px; color: #3498db;">Parking Area</strong>
+        	            <p style="margin: 8px 0;">${loc.location}</p>
+        	            <a href="/user/book/map-booking?location=${encodeURIComponent(loc.city)}&name=${encodeURIComponent(loc.name)}"
+
+        	               style="display: inline-block; background: #2ecc71; color: white; padding: 5px 10px; 
+        	                      border-radius: 3px; text-decoration: none; margin-top: 5px;">
+        	              Book Now
+        	            </a>
+        	          </div>
+        	        `);
+        	    } else {
+        	      console.warn('Geocoding failed for:', loc.location, '→', data);
+        	    }
+        	  })
+        	  .catch(err => console.error("Geocoding error:", err));
+        	});
+
       })
       .catch(error => {
         console.error("Failed to fetch parking locations:", error);

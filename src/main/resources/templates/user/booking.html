@@ -427,6 +427,8 @@
 				}
 
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
 </head>
 <body>
     <div class="container">
@@ -571,57 +573,61 @@
 
     <!-- AJAX Script -->
     <script>	
-		
-		   console.log('Preselected Location:', preselectedLocation);
-				   console.log('Preselected Location:', preselectedLocation);
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
 
-		function getQueryParam(param) {
-			const urlParams = new URLSearchParams(window.location.search);
-			return urlParams.get(param);
-		}
+      document.addEventListener("DOMContentLoaded", function () {
+        const preselectedLocation = '[[${preselectedLocation}]]'; // Preselected location from backend
+        const preselectedCity = getQueryParam("location"); // Get city from URL
+        const preselectedParkingName = getQueryParam("name"); // Get parking name from URL
 
-		document.addEventListener("DOMContentLoaded", function () {
-			const passedLocation = getQueryParam("location");
+        const cityDropdown = document.getElementById("cityDropdown");
 
-			if (passedLocation && parkingAreas.length > 0) {
-				const decodedLocation = decodeURIComponent(passedLocation);
-				console.log("Decoded URL location:", decodedLocation);
-				console.log("Parking Areas JSON:", parkingAreas);
+        // Check if city is passed and matches one of the options
+        if (preselectedCity && preselectedCity !== 'null') {
+          const lowerCity = preselectedCity.trim().toLowerCase();
 
-				const matched = parkingAreas.find(area => area.location === decodedLocation);
+          // Select the city in the dropdown
+          Array.from(cityDropdown.options).forEach(opt => {
+            if (opt.value.trim().toLowerCase() === lowerCity) {
+              opt.selected = true;
+            }
+          });
 
-				if (matched) {
-					const cityDropdown = document.getElementById("cityDropdown");
-					const parkingDropdown = document.getElementById("parkingDropdown");
+          // If a city was selected, fetch parking areas for that city
+          $('#parkingDropdown').empty().append('<option value="">Loading...</option>');
 
-					// Step 1: Select the city
-					Array.from(cityDropdown.options).forEach(opt => {
-						if (opt.value.trim().toLowerCase() === matched.city.trim().toLowerCase()) {
-							opt.selected = true;
-						}
-					});
+          $.get("/user/book/parking-by-city", { city: preselectedCity }, function (data) {
+            $('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
 
-					// Step 2: Load parking areas dynamically
-					$('#parkingDropdown').empty().append('<option value="">Loading...</option>');
-					$.get("/user/book/parking-by-city", { city: matched.city }, function (data) {
-						$('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
-						data.forEach(function (parking) {
-							$('#parkingDropdown').append('<option value="' + parking.id + '">' + parking.name + '</option>');
-						});
+            data.forEach(function (parking) {
+              const isMatch = parking.name.trim().toLowerCase() === preselectedParkingName.trim().toLowerCase();
+              
+              // If parking name matches, auto-select the parking area
+              $('#parkingDropdown').append(
+                `<option value="${parking.id}" ${isMatch ? 'selected' : ''}>${parking.name}</option>`
+              );
+            });
+          });
+        }
 
-						// Step 3: Preselect parking
-						const matchedOption = Array.from(parkingDropdown.options).find(
-							opt => opt.text.trim() === matched.name.trim() || opt.value == matched.id
-						);
-						if (matchedOption) {
-							matchedOption.selected = true;
-						}
-					});
-				}
-			}
-		});
+        // Manual city selection handling
+        $('#cityDropdown').on('change', function () {
+          const selectedCity = $(this).val();
+          $('#parkingDropdown').empty().append('<option value="">Loading...</option>');
+          $('#slotSection').hide(); // Hide old slot info
 
-
+          // Fetch parking areas for the selected city
+          $.get("/user/book/parking-by-city", { city: selectedCity }, function (data) {
+            $('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
+            data.forEach(function (parking) {
+              $('#parkingDropdown').append('<option value="' + parking.id + '">' + parking.name + '</option>');
+            });
+          });
+        });
+      });
         $(document).ready(function() {
             // Update steps based on progress
             function updateSteps(activeStep) {
@@ -801,19 +807,7 @@
                 });
             });
             
-            // Load parkings when city is selected
-            $('#cityDropdown').on('change', function () {
-                const selectedCity = $(this).val();
-                $('#parkingDropdown').empty().append('<option value="">Loading...</option>');
-                $('#slotSection').hide();
-                
-                $.get("/user/book/parking-by-city", { city: selectedCity }, function (data) {
-                    $('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
-                    data.forEach(function (parking) {
-                        $('#parkingDropdown').append('<option value="' + parking.id + '">' + parking.name + '</option>');
-                    });
-                });
-            });
+            
             
             // Save parkingId in hidden input when parking is selected
             $('#parkingDropdown').on('change', function () {

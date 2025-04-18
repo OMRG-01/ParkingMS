@@ -46,6 +46,7 @@ public class MapController {
                     Map<String, Object> locMap = new HashMap<>();
                     locMap.put("name", pa.getName());
                     locMap.put("location", pa.getLocation());
+                    locMap.put("city", pa.getCity());
                     locMap.put("lat", firstResult.get("lat"));
                     locMap.put("lon", firstResult.get("lon"));
                     result.add(locMap);
