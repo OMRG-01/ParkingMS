@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class AuthController {
@@ -141,18 +142,26 @@ public class AuthController {
 
     @GetMapping("/user/dashboard")
     public String userDashboard(HttpSession session, Model model) {
+        // Get the logged-in user from session
         User loggedInUser = (User) session.getAttribute("loggedInUser");
 
         if (loggedInUser == null) {
-            return "redirect:/login1"; // Redirect if not logged in
+            // If not logged in, redirect to login page
+            return "redirect:/login1"; 
         }
 
+        // Check if the mobile number is still the default (00000000)
+        if ("0000000000".equals(loggedInUser.getMobileNumber())) {
+            // Redirect to profile update page if the mobile number is the default
+            return "redirect:/update-profile";
+        }
+
+        // Fetch user's vehicles for the dashboard
         List<Vehicle> userVehicles = vehicleService.getVehiclesByUser(loggedInUser.getId());
         model.addAttribute("vehicles", userVehicles);
 
-        return "user/userDash";
+        return "user/userDash"; // Display user dashboard
     }
-
 
    
 
@@ -212,5 +221,48 @@ public class AuthController {
         return "redirect:/register1";  // Redirect to the login page after successful registration
     }
 
+    @GetMapping("/update-profile")
+    public String showUpdateProfilePage(HttpSession session, Model model) {
+        // Get the logged-in user from session
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
 
+        if (loggedInUser == null) {
+            return "redirect:/login1"; // If not logged in, redirect to login page
+        }
+
+        // Add logged-in user to model for editing
+        model.addAttribute("user", loggedInUser);
+
+        return "user/updateProfile"; // Return the update profile page
+    }
+
+    @PostMapping("/updateProfile")
+    public String updateProfile(@ModelAttribute("user") User updatedUser, HttpSession session, RedirectAttributes redirectAttributes) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+
+        if (loggedInUser == null) {
+            return "redirect:/login1"; // If not logged in, redirect to login page
+        }
+
+        // If the user has updated their password, set it
+        if (!updatedUser.getPassword().isEmpty()) {
+            loggedInUser.setPassword(updatedUser.getPassword());  // You might want to add password validation and encryption here
+        }
+
+        // Update other fields (like name, mobile, etc.)
+        loggedInUser.setName(updatedUser.getName());
+        loggedInUser.setMobileNumber(updatedUser.getMobileNumber());
+        loggedInUser.setCity(updatedUser.getCity());
+        loggedInUser.setGender(updatedUser.getGender());
+
+        // Save updated user to the database
+        userService.updateUser(loggedInUser);
+
+        // Update the session with the new user data
+        session.setAttribute("loggedInUser", loggedInUser);
+
+        // Add success message and redirect
+        redirectAttributes.addFlashAttribute("message", "Profile updated successfully!");
+        return "redirect:/user/dashboard"; // Redirect to the dashboard after updating
+    }
 }

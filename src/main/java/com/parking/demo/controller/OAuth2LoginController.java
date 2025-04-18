@@ -20,27 +20,22 @@ public class OAuth2LoginController {
 	@Autowired
 	private UserRepository userRepository;
 
-    @GetMapping("/dashboard")
+	@GetMapping("/dashboard")
     public String handleLoginSuccess(HttpServletRequest request, Model model) {
-        // Get the logged-in user from the session (you can store the user's details in the session)
-        OAuth2User oAuth2User = (OAuth2User) request.getAttribute("oauth2User");
+        HttpSession session = request.getSession(false);
 
-        // Get the email from the OAuth2User
-        String email = oAuth2User.getAttribute("email");
-
-        // Retrieve the user from the database (you can use userRepository here)
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-
-            // Set session attributes for the logged-in user
-            HttpSession session = request.getSession(true);
-            session.setAttribute("loggedInUser", user);
-            session.setAttribute("userId", user.getId());
-            session.setAttribute("userRole", user.getRole().getRoleName());
-            session.setMaxInactiveInterval(30 * 60); // Set session timeout
+        // ✅ SAFELY try to get oauth2User from session
+        if (session != null) {
+            User user = (User) session.getAttribute("loggedInUser");
+            if (user != null) {
+                model.addAttribute("user", user);
+                return "user/userDash"; // ✅ correct Thymeleaf view
+            }
         }
 
-        return "user/userDash"; // Redirect to the dashboard
+        // If not logged in, redirect to login page
+        return "redirect:/login1";
     }
+
+
 }

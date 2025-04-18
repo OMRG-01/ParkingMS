@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile - Parking Management System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --light: #ecf0f1;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --gray: #95a5a6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--secondary);
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 15px;
+            transition: all 0.3s;
+            outline: none;
+            padding-left: 40px;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            cursor: not-allowed;
+        }
+        
+        .form-icon {
+            position: absolute;
+            left: 12px;
+            top: 38px;
+            color: var(--gray);
+        }
+        
+        .gender-options {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .gender-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .gender-option input {
+            margin-right: 8px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn:disabled {
+            background-color: var(--gray);
+            cursor: not-allowed;
+        }
+        
+        .required-hint {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .status-text {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--danger);
+        }
+        
+        .valid-input {
+            border-color: var(--success) !important;
+        }
+        
+        .invalid-input {
+            border-color: var(--danger) !important;
+        }
+        
+        .completion-progress {
+            background-color: #f0f0f0;
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .password-strength {
+            margin-top: 5px;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        @media (max-width: 576px) {
+            .container {
+                box-shadow: none;
+            }
+            
+            .form-container {
+                padding: 20px 15px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .logo {
+                position: static;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <i class="fas fa-parking logo"></i>
+            <h1>Complete Your Profile</h1>
+            <p>Please provide your information to continue</p>
+        </div>
+        
+        <div class="form-container">
+            <div class="completion-progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <form th:action="@{/updateProfile}" method="post" th:object="${user}" id="profileForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <i class="fas fa-user form-icon"></i>
+                    <input type="text" id="name" class="form-control" th:field="*{name}" required placeholder="Enter your full name" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <i class="fas fa-envelope form-icon"></i>
+                    <input type="email" id="email" class="form-control" th:field="*{email}" required readonly />
+                </div>
+                
+                <div class="form-group">
+                    <label for="mobileNumber">Mobile Number</label>
+                    <i class="fas fa-phone form-icon"></i>
+                    <input type="tel" id="mobileNumber" class="form-control" th:field="*{mobileNumber}" required placeholder="Enter your mobile number" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <i class="fas fa-city form-icon"></i>
+                    <input type="text" id="city" class="form-control" th:field="*{city}" required placeholder="Enter your city" />
+                </div>
+                
+                <div class="form-group">
+                    <label>Gender</label>
+                    <div class="gender-options">
+                        <label class="gender-option">
+                            <input type="radio" name="gender" value="Male" th:field="*{gender}" required /> Male
+                        </label>
+                        <label class="gender-option">
+                            <input type="radio" name="gender" value="Female" th:field="*{gender}" required /> Female
+                        </label>
+                        <label class="gender-option">
+                            <input type="radio" name="gender" value="Other" th:field="*{gender}" required /> Other
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">New Password (Optional)</label>
+                    <i class="fas fa-lock form-icon"></i>
+                    <input type="password" id="password" class="form-control" th:field="*{password}" placeholder="Create a new password (optional)" />
+                    <div class="password-strength" id="passwordStrength">Password strength: <span id="passwordStrengthText">Weak</span></div>
+                </div>
+                
+                <div class="status-text" id="formStatus">
+                    Please fill all required fields to continue
+                </div>
+                
+                <button type="submit" class="btn" id="updateBtn" disabled>
+                    <i class="fas fa-check-circle"></i> Complete Profile
+                </button>
+            </form>
+            
+            <div class="footer">
+                <p>Parking Management System © 2025</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('profileForm');
+            const updateBtn = document.getElementById('updateBtn');
+            const formStatus = document.getElementById('formStatus');
+            const progressBar = document.getElementById('progressBar');
+            const passwordInput = document.getElementById('password');
+            const passwordStrength = document.getElementById('passwordStrength');
+            const passwordStrengthText = document.getElementById('passwordStrengthText');
+            
+            // Required fields
+            const requiredFields = [
+                document.getElementById('name'),
+                document.getElementById('mobileNumber'),
+                document.getElementById('city')
+            ];
+            
+            // Gender radio buttons
+            const genderOptions = document.querySelectorAll('input[name="gender"]');
+            
+            // Check if all required fields are filled
+            function checkFormCompletion() {
+                let allFilled = true;
+                let genderSelected = false;
+                let filledCount = 0;
+                
+                // Check text inputs
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        allFilled = false;
+                    } else {
+                        filledCount++;
+                    }
+                });
+                
+                // Check gender selection
+                genderOptions.forEach(option => {
+                    if (option.checked) {
+                        genderSelected = true;
+                        filledCount++;
+                    }
+                });
+                
+                // Update progress bar
+                const totalRequired = requiredFields.length + 1; // +1 for gender
+                const progressPercentage = (filledCount / totalRequired) * 100;
+                progressBar.style.width = progressPercentage + '%';
+                
+                // Update button state
+                if (allFilled && genderSelected) {
+                    updateBtn.disabled = false;
+                    formStatus.textContent = 'All set! You can complete your profile now.';
+                    formStatus.style.color = '#2ecc71';
+                } else {
+                    updateBtn.disabled = true;
+                    formStatus.textContent = 'Please fill all required fields to continue';
+                    formStatus.style.color = '#e74c3c';
+                }
+                
+                return allFilled && genderSelected;
+            }
+            
+            // Password strength checker
+            function checkPasswordStrength(password) {
+                if (!password) {
+                    passwordStrength.style.display = 'none';
+                    return;
+                }
+                
+                passwordStrength.style.display = 'block';
+                
+                // Simple password strength check
+                let strength = 0;
+                if (password.length >= 8) strength++;
+                if (password.match(/[a-z]+/)) strength++;
+                if (password.match(/[A-Z]+/)) strength++;
+                if (password.match(/[0-9]+/)) strength++;
+                if (password.match(/[^a-zA-Z0-9]+/)) strength++;
+                
+                switch (strength) {
+                    case 0:
+                    case 1:
+                        passwordStrengthText.textContent = 'Weak';
+                        passwordStrengthText.style.color = '#e74c3c';
+                        break;
+                    case 2:
+                    case 3:
+                        passwordStrengthText.textContent = 'Medium';
+                        passwordStrengthText.style.color = '#f39c12';
+                        break;
+                    case 4:
+                    case 5:
+                        passwordStrengthText.textContent = 'Strong';
+                        passwordStrengthText.style.color = '#2ecc71';
+                        break;
+                }
+            }
+            
+            // Add event listeners to all required fields
+            requiredFields.forEach(field => {
+                field.addEventListener('input', checkFormCompletion);
+            });
+            
+            // Add event listeners to gender options
+            genderOptions.forEach(option => {
+                option.addEventListener('change', checkFormCompletion);
+            });
+            
+            // Password strength checker
+            passwordInput.addEventListener('input', function() {
+                checkPasswordStrength(this.value);
+            });
+            
+            // Initial check
+            checkFormCompletion();
+        });
+    </script>
+</body>
+</html>
