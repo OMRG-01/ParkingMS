@@ -594,7 +594,9 @@
   <div class="flash-container" id="flashContainer"></div>
   
   <script>
-	document.addEventListener("DOMContentLoaded", function () {
+  fetchNotifications(); // Must be called somewhere
+
+  document.addEventListener("DOMContentLoaded", function () {
 	    fetch("/admin/api/today-revenue")
 	      .then(response => response.json())
 	      .then(data => {
@@ -606,151 +608,147 @@
 	      });
 	  });
     // Function to fetch notifications
-    function fetchNotifications() {
-      // In production, use this to fetch real data:
-     
-      fetch('/admin/notifications/latest')
-        .then(res => res.json())
-        .then(data => {
-          renderNotifications(data);
-        })
-        .catch(error => {
-          console.error('Error fetching notifications:', error);
-          // Show error flash message
-          showFlashMessage('Error', 'Failed to fetch notifications', 'error');
-        });
-    
-      
-     
-    }
-    
-    // Function to render notifications
-    function renderNotifications(notifications) {
-      const list = document.getElementById('notificationList');
-      list.innerHTML = ''; // Clear the list
-      
-      if (notifications.length === 0) {
-        const emptyItem = document.createElement('li');
-        emptyItem.className = 'notification-item';
-        emptyItem.innerHTML = `
-          <i class="fas fa-info-circle"></i>
-          <div class="notification-content">
-            <div class="notification-text">No notifications at this time.</div>
-          </div>
-        `;
-        list.appendChild(emptyItem);
-        return;
-      }
-      
-      notifications.forEach((notif, index) => {
-        const li = document.createElement('li');
-        li.className = `notification-item ${notif.isNew ? 'new' : ''}`;
-        li.setAttribute('data-id', index);
-        
-        li.innerHTML = `
-          <i class="fas ${notif.isNew ? 'fa-bell' : 'fa-bell-slash'}"></i>
-          <div class="notification-content">
-            <div class="notification-text">${notif.message}</div>
-            <div class="notification-time">${notif.time}</div>
-          </div>
-        `;
-        
-        list.appendChild(li);
-        
-        // Add auto-disappear for new notifications after 30 seconds
-        if (notif.isNew) {
-          setTimeout(() => {
-            const notifElement = document.querySelector(`[data-id="${index}"]`);
-            if (notifElement) {
-              notifElement.style.opacity = '0';
-              setTimeout(() => {
-                if (notifElement.parentNode) {
-                  notifElement.parentNode.removeChild(notifElement);
-                }
-              }, 500);
-              
-              // Show flash message for the notification
-              showFlashMessage('New Notification', notif.message, 'info');
-            }
-          }, 30000); // 30 seconds
-        }
-      });
-    }
-    
-    // Function to show flash messages
-    function showFlashMessage(title, message, type = 'info') {
-      const container = document.getElementById('flashContainer');
-      const id = 'flash-' + Date.now();
-      
-      const flashDiv = document.createElement('div');
-      flashDiv.className = `flash-message flash-${type}`;
-      flashDiv.id = id;
-      
-      let icon = 'info-circle';
-      if (type === 'success') icon = 'check-circle';
-      if (type === 'warning') icon = 'exclamation-triangle';
-      if (type === 'error') icon = 'times-circle';
-      
-      flashDiv.innerHTML = `
-        <div class="flash-icon">
-          <i class="fas fa-${icon}"></i>
-        </div>
-        <div class="flash-content">
-          <div class="flash-title">${title}</div>
-          <div class="flash-text">${message}</div>
-        </div>
-        <button class="flash-close" onclick="closeFlash('${id}')">
-          <i class="fas fa-times"></i>
-        </button>
-      `;
-      
-      container.appendChild(flashDiv);
-      
-      // Auto-remove after 5 seconds (animation handles the fade out)
-      setTimeout(() => {
-        closeFlash(id);
-      }, 5000);
-    }
-    
-    // Function to close flash message
-    function closeFlash(id) {
-      const flash = document.getElementById(id);
-      if (flash) {
-        flash.style.opacity = '0';
-        flash.style.transform = 'translateY(-10px)';
-        setTimeout(() => {
-          if (flash.parentNode) {
-            flash.parentNode.removeChild(flash);
-          }
-        }, 300);
-      }
-    }
-    
-    // Event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-      // Initial fetch of notifications
-      fetchNotifications();
-      
-      // Set up polling for notifications every 30 seconds
-      setInterval(fetchNotifications, 30000);
-      
-      // Refresh button
-      document.getElementById('refreshBtn').addEventListener('click', function() {
-        fetchNotifications();
-        showFlashMessage('Refreshed', 'Dashboard data has been updated', 'success');
-      });
-      
-      // Clear notifications button
-      document.getElementById('clearNotifications').addEventListener('click', function() {
-        document.getElementById('notificationList').innerHTML = '';
-        showFlashMessage('Cleared', 'All notifications have been cleared', 'info');
-      });
-      
-      // Show welcome flash message
-      setTimeout(() => {
-        showFlashMessage('Welcome Back', 'You have 4 new notifications', 'success');
-      }, 1000);
+   function fetchNotifications() {
+  // In production, use this to fetch real data:
+  fetch('/admin/notifications/latest')
+    .then(res => res.json())
+    .then(data => {
+      renderNotifications(data); // Pass raw notifications to render function
+    })
+    .catch(error => {
+      console.error('Error fetching notifications:', error);
+      showFlashMessage('Error', 'Failed to fetch notifications', 'error');
     });
+}
+
+// Function to render notifications
+function renderNotifications(notifications) {
+  const list = document.getElementById('notificationList');
+  list.innerHTML = ''; // Clear the list
+  
+  if (notifications.length === 0) {
+    const emptyItem = document.createElement('li');
+    emptyItem.className = 'notification-item';
+    emptyItem.innerHTML = `
+      <i class="fas fa-info-circle"></i>
+      <div class="notification-content">
+        <div class="notification-text">No notifications at this time.</div>
+      </div>
+    `;
+    list.appendChild(emptyItem);
+    return;
+  }
+  
+  // Loop through notifications (strings from backend)
+  notifications.forEach((notif, index) => {
+    const li = document.createElement('li');
+    li.className = `notification-item ${true ? 'new' : ''}`; // Set as 'new' (you can customize condition)
+    li.setAttribute('data-id', index);
+    
+    // Create notification item and display message
+    li.innerHTML = `
+      <i class="fas fa-bell"></i>
+      <div class="notification-content">
+        <div class="notification-text">${notif}</div> <!-- Directly use the message from backend -->
+        <div class="notification-time">Just now</div> <!-- Example time, adjust as needed -->
+      </div>
+    `;
+    
+    list.appendChild(li);
+    
+    // Add auto-disappear for new notifications after 30 seconds
+    setTimeout(() => {
+      const notifElement = document.querySelector(`[data-id="${index}"]`);
+      if (notifElement) {
+        notifElement.style.opacity = '0';
+        setTimeout(() => {
+          if (notifElement.parentNode) {
+            notifElement.parentNode.removeChild(notifElement);
+          }
+        }, 500);
+        
+        // Show flash message for the notification
+        showFlashMessage('New Notification', notif, 'info');
+      }
+    }, 300000); // 30 seconds
+  });
+}
+
+// Show flash messages
+function showFlashMessage(title, message, type = 'info') {
+  const container = document.getElementById('flashContainer');
+  const id = 'flash-' + Date.now();
+  
+  const flashDiv = document.createElement('div');
+  flashDiv.className = `flash-message flash-${type}`;
+  flashDiv.id = id;
+  
+  let icon = 'info-circle';
+  if (type === 'success') icon = 'check-circle';
+  if (type === 'warning') icon = 'exclamation-triangle';
+  if (type === 'error') icon = 'times-circle';
+  
+  flashDiv.innerHTML = `
+    <div class="flash-icon">
+      <i class="fas fa-${icon}"></i>
+    </div>
+    <div class="flash-content">
+      <div class="flash-title">${title}</div>
+      <div class="flash-text">${message}</div>
+    </div>
+    <button class="flash-close" onclick="closeFlash('${id}')">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  container.appendChild(flashDiv);
+  
+  // Auto-remove after 5 seconds (animation handles the fade out)
+  setTimeout(() => {
+    closeFlash(id);
+  }, 5000);
+}
+
+// Function to close flash message
+function closeFlash(id) {
+  const flash = document.getElementById(id);
+  if (flash) {
+    flash.style.opacity = '0';
+    flash.style.transform = 'translateY(-10px)';
+    setTimeout(() => {
+      if (flash.parentNode) {
+        flash.parentNode.removeChild(flash);
+      }
+    }, 300);
+  }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Initial fetch of notifications
+  fetchNotifications();
+  
+  // Set up polling for notifications every 30 seconds
+  setInterval(fetchNotifications, 30000);
+  
+  // Refresh button
+  document.getElementById('refreshBtn').addEventListener('click', function() {
+    fetchNotifications();
+    showFlashMessage('Refreshed', 'Dashboard data has been updated', 'success');
+  });
+  
+  // Clear notifications button
+  document.getElementById('clearNotifications').addEventListener('click', function() {
+    document.getElementById('notificationList').innerHTML = '';
+    showFlashMessage('Cleared', 'All notifications have been cleared', 'info');
+  });
+  
+  // Show welcome flash message
+  setTimeout(() => {
+    showFlashMessage('Welcome Back', 'You have 4 new notifications', 'success');
+  }, 1000);
+});
+
   </script>
 </body>
 </html>

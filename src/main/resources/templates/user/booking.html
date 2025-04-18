@@ -427,6 +427,8 @@
 				}
 
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
 </head>
 <body>
     <div class="container">
@@ -464,7 +466,7 @@
         <div class="booking-form">
             <form method="post" th:action="@{/user/book/submit}">
                 <input type="hidden" name="userId" th:value="${userId}">
-                <input type="hidden" id="hiddenParkingId" name="parkingId">
+                <input type="hidden" id="hiddenParkingId" name="parkingId" />
                 <input type="hidden" id="selectedVehicleType" />
                 <input type="hidden" id="hiddenUserId" th:value="${userId}" />
                 <input type="hidden" name="selectedSlot" id="selectedSlot">
@@ -571,56 +573,68 @@
 
     <!-- AJAX Script -->
     <script>	
-		
-		   console.log('Preselected Location:', preselectedLocation);
-				   console.log('Preselected Location:', preselectedLocation);
+    
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
 
-		function getQueryParam(param) {
-			const urlParams = new URLSearchParams(window.location.search);
-			return urlParams.get(param);
-		}
+    document.addEventListener("DOMContentLoaded", function () {
+    	  const preselectedCity = getQueryParam("location");
+    	  const preselectedParkingId = getQueryParam("parkingId"); // Use parkingId from URL
 
-		document.addEventListener("DOMContentLoaded", function () {
-			const passedLocation = getQueryParam("location");
+    	  const cityDropdown = document.getElementById("cityDropdown");
+    	  const parkingDropdown = $('#parkingDropdown');
 
-			if (passedLocation && parkingAreas.length > 0) {
-				const decodedLocation = decodeURIComponent(passedLocation);
-				console.log("Decoded URL location:", decodedLocation);
-				console.log("Parking Areas JSON:", parkingAreas);
+    	  if (preselectedCity && cityDropdown) {
+    	    // Set the city dropdown
+    	    const lowerCity = preselectedCity.trim().toLowerCase();
+    	    Array.from(cityDropdown.options).forEach(opt => {
+    	      if (opt.value.trim().toLowerCase() === lowerCity) {
+    	        opt.selected = true;
+    	      }
+    	    });
 
-				const matched = parkingAreas.find(area => area.location === decodedLocation);
+    	    // Fetch parking areas for the city
+    	    parkingDropdown.empty().append('<option value="">Loading...</option>');
 
-				if (matched) {
-					const cityDropdown = document.getElementById("cityDropdown");
-					const parkingDropdown = document.getElementById("parkingDropdown");
+    	    $.get("/user/book/parking-by-city", { city: preselectedCity }, function (data) {
+    	      parkingDropdown.empty().append('<option value="">Select Parking</option>');
 
-					// Step 1: Select the city
-					Array.from(cityDropdown.options).forEach(opt => {
-						if (opt.value.trim().toLowerCase() === matched.city.trim().toLowerCase()) {
-							opt.selected = true;
-						}
-					});
+    	      data.forEach(parking => {
+    	        const isSelected = preselectedParkingId && parking.id.toString() === preselectedParkingId;
+    	        parkingDropdown.append(
+    	          `<option value="${parking.id}" ${isSelected ? 'selected' : ''}>${parking.name}</option>`
+    	        );
+    	      });
 
-					// Step 2: Load parking areas dynamically
-					$('#parkingDropdown').empty().append('<option value="">Loading...</option>');
-					$.get("/user/book/parking-by-city", { city: matched.city }, function (data) {
-						$('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
-						data.forEach(function (parking) {
-							$('#parkingDropdown').append('<option value="' + parking.id + '">' + parking.name + '</option>');
-						});
+    	      if (preselectedParkingId) {
+    	        $('#hiddenParkingId').val(preselectedParkingId); // Set hidden field
+    	        parkingDropdown.trigger('change'); // Trigger any dependent UI logic
+    	      }
+    	    });
+    	  }
 
-						// Step 3: Preselect parking
-						const matchedOption = Array.from(parkingDropdown.options).find(
-							opt => opt.text.trim() === matched.name.trim() || opt.value == matched.id
-						);
-						if (matchedOption) {
-							matchedOption.selected = true;
-						}
-					});
-				}
-			}
-		});
+    	  // Manual city change still works
+    	  $('#cityDropdown').on('change', function () {
+    	    const selectedCity = $(this).val();
+    	    parkingDropdown.empty().append('<option value="">Loading...</option>');
+    	    $('#slotSection').hide();
 
+    	    $.get("/user/book/parking-by-city", { city: selectedCity }, function (data) {
+    	      parkingDropdown.empty().append('<option value="">Select Parking</option>');
+    	      data.forEach(parking => {
+    	        parkingDropdown.append(`<option value="${parking.id}">${parking.name}</option>`);
+    	      });
+    	    });
+    	  });
+
+    	  // On parking dropdown change, set hidden input
+    	  parkingDropdown.on('change', function () {
+    	    $('#hiddenParkingId').val($(this).val());
+    	    $('#slotSection').hide(); // reset UI
+    	  });
+    	});
 
         $(document).ready(function() {
             // Update steps based on progress
@@ -730,32 +744,33 @@
             
             // Submit handler with confirmation
             $('#confirmButton').on('click', function (e) {
-                e.preventDefault();
-                
-                // Check if slot is selected
-                if (!$('#selectedSlot').val()) {
-                    alert('Please select a parking slot');
-                    return;
-                }
-                
-                updateSteps(2);
-                
-                const totalAmount = $('#totalAmount').text();
-                if (totalAmount) {
-                    $('#confirmationAmount').text(totalAmount);
-                    $('#confirmationPopUp').show();
-                    
-                    const formData = $('form').serialize();
-                    
-                    $.post('/user/book/submit', formData, function (response) {
-                        console.log("Booking Success:", response.message);
-                        createdBookingId = response.bookingId;
-                    }).fail(function (err) {
-                        alert("Booking failed. Please try again.");
-                        console.error("Booking error:", err);
-                    });
-                }
-            });
+    e.preventDefault(); // <-- ADD THIS to stop default form submit behavior
+
+    if (!$('#selectedSlot').val()) {
+        alert('Please select a parking slot');
+        return;
+    }
+
+    updateSteps(2);
+
+    const totalAmount = $('#totalAmount').text();
+    if (totalAmount) {
+        $('#confirmationAmount').text(totalAmount);
+        $('#confirmationPopUp').show();
+
+        const formData = $('form').serialize();
+        console.log("Form Data:", formData);
+
+        $.post('/user/book/submit', formData, function (response) {
+            console.log("Booking Success:", response.message);
+            createdBookingId = response.bookingId;
+        }).fail(function (err) {
+            alert("Booking failed. Please try again.");
+            console.error("Booking error:", err);
+        });
+    }
+});
+
             
             // Send OTP on Pay button click
             $('#payButton').on('click', function () {
@@ -801,19 +816,7 @@
                 });
             });
             
-            // Load parkings when city is selected
-            $('#cityDropdown').on('change', function () {
-                const selectedCity = $(this).val();
-                $('#parkingDropdown').empty().append('<option value="">Loading...</option>');
-                $('#slotSection').hide();
-                
-                $.get("/user/book/parking-by-city", { city: selectedCity }, function (data) {
-                    $('#parkingDropdown').empty().append('<option value="">Select Parking</option>');
-                    data.forEach(function (parking) {
-                        $('#parkingDropdown').append('<option value="' + parking.id + '">' + parking.name + '</option>');
-                    });
-                });
-            });
+            
             
             // Save parkingId in hidden input when parking is selected
             $('#parkingDropdown').on('change', function () {

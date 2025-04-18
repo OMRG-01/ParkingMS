@@ -16,7 +16,10 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
-
+    
+    @Autowired
+    private MailService mailService;
+    
     @Override
     public User findByEmailAndPassword(String email, String password) {
         return userRepository.findByEmailAndPassword(email, password);
@@ -55,16 +58,31 @@ public class UserServiceImpl implements UserService {
 
     public void updateUser(User updatedUser) {
         User existingUser = userRepository.findById(updatedUser.getId()).orElse(null);
+        
         if (existingUser != null) {
+            // Update user details
             existingUser.setName(updatedUser.getName());
             existingUser.setEmail(updatedUser.getEmail());
             existingUser.setMobileNumber(updatedUser.getMobileNumber());
             existingUser.setCity(updatedUser.getCity());
             existingUser.setGender(updatedUser.getGender());
+
+            // If the password is not empty and the user wants to change it
+            String newPassword = updatedUser.getPassword();
+            if (newPassword != null && !newPassword.isEmpty()) {
+                existingUser.setPassword(newPassword);  // Set the new password (no encryption)
+            } else {
+                newPassword = existingUser.getPassword();  // If no new password is provided, keep the old one
+            }
+
+            // Save the updated user to the database
             userRepository.save(existingUser);
+            
+         // Send the email confirmation with the updated password
+            mailService.sendProfileUpdateEmail(existingUser.getEmail(), existingUser.getName(), newPassword);
         }
     }
-    
+        
     public String getUserEmailById(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
         return user != null ? user.getEmail() : null;
