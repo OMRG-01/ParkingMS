@@ -54,7 +54,7 @@ public class AuthController {
     
     @GetMapping("/")
     public String home() {
-        return "index"; // Redirects to index.html in 'static'
+        return "login"; // Redirects to index.html in 'static'
     }
     @GetMapping("/login1")
     public String showLoginPage() {
@@ -218,7 +218,7 @@ public class AuthController {
         // Trigger a notification for the new user registration
         notificationService.addNotification("New user registered: " + user.getName());
 
-        return "redirect:/register1";  // Redirect to the login page after successful registration
+        return "redirect:/login1";  // Redirect to the login page after successful registration
     }
 
     @GetMapping("/update-profile")
