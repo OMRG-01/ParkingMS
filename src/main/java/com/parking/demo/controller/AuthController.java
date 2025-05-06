@@ -54,7 +54,7 @@ public class AuthController {
     
     @GetMapping("/")
     public String home() {
-        return "login"; // Redirects to index.html in 'static'
+        return "index"; // Redirects to index.html in 'static'
     }
     @GetMapping("/login1")
     public String showLoginPage() {
